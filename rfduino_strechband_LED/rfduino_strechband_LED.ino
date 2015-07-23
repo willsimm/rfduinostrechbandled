@@ -1,7 +1,7 @@
 /*
 Read resistance of strech sensor and report it over BLE
 Show on LED
-Will Simm w.simm@lancs.ac.uk
+Will Simm w.simm@lancs.ac.uk 
 
 */
 
@@ -25,26 +25,16 @@ int delayWhenActive = 50;
 int delayWhenInActive = 800;
 int sleepDelay = delayWhenActive;
 
-//MEMORY STUFF
-/* each usage recording (start time - 4 byte long, stop time 4 byte long) is 8 bytes.
-each page of flash is 1k = 1024 bytes
-thats 256 values or 128 usages in each page
-****could impelnt a reset counter so we know how many tmes the device is reset and add that nuber to the start of a page, that way we know isf a page is valid to output or not.
-*/
-unsigned long usage[256];
-int usageIndex =0;
-
-//last available page
-int pageIndex = 251;
-
-
-
+bool save = true;
 
 bool firstRun = true;
 bool sendMessages = true;
 //count how may cycles the band has been inactive for
 int zeroCount = 0;
 int cyclesToSleep = 50;
+
+//keep track of if the thing is sleeping or not.
+bool sleeping = false;
 
 void setup() {
   // this is the data we want to appear in the advertisement
@@ -67,7 +57,15 @@ void setup() {
   minVal = readStretch();
   maxVal = minVal+10;
   
-  recordUsage();
+  /*
+  Serial.print(" min flash ");
+  Serial.println(findMinFlashPage(251));
+  */
+  
+  if(save){
+    //start of usage
+    saveUsage( millis() );
+  }
   
 }
 
@@ -78,7 +76,11 @@ void loop() {
   // if the LED has been off for a number of cycles, go to long delay and record end of usage
   if (zeroCount > cyclesToSleep){
      sleepDelay = delayWhenInActive;
-     recordUsage();
+    if(save && !sleeping){     
+       //end of usage - knock the time back by the timeout period
+       saveUsage( millis() - (delayWhenActive*cyclesToSleep) );
+       sleeping = true;
+    }
   }
 
   //RFduinoBLE.sendFloat(readStretch());
@@ -113,8 +115,15 @@ void loop() {
   else{ 
     //bring out of long delay and record start of usage
     sleepDelay = delayWhenActive;
-    recordUsage();
     zeroCount = 0;
+    
+    if (sleeping){
+      sleeping=false;
+       if(save){
+        saveUsage( millis() );
+       }
+    }
+    
   }
   
   
@@ -122,13 +131,13 @@ void loop() {
   
   //echo out to serial
   Serial.print(" LED "); 
-  Serial.print(LED);
+  Serial.println(LED);
   /*Serial.print(" reading "); 
   Serial.print(reading);
   Serial.print(" max "); 
   Serial.print(maxVal);
   Serial.print(" min "); 
-  Serial.println(minVal);*/
+  Serial.println(minVal);
   Serial.print(" zerocount "); 
   Serial.print(zeroCount);  
   Serial.print(" ram "); 
@@ -136,7 +145,7 @@ void loop() {
     Serial.print(" flash "); 
   Serial.println(flashUsed());  
       Serial.print(" usageindex "); 
-  Serial.println(usageIndex);
+  Serial.println(usageIndex);*/
 
 }
 
@@ -194,7 +203,7 @@ float readStretch(){
   return reading;
    
 }
-
+/*
 //record the usage
 void recordUsage(){ 
    usage[usageIndex] = millis();
@@ -204,4 +213,4 @@ void recordUsage(){
     
      usageIndex=0; 
    }
-}
+}*/
