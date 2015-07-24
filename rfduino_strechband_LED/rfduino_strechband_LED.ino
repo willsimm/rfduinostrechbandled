@@ -16,25 +16,23 @@ Will Simm w.simm@lancs.ac.uk
 // the value of the 'other' resistor in the divider with the strech sensor
 #define SERIESRESISTOR 10000    
  
-//set some initial values
+//CONFIG
+//These vars are used to configure the device 
+bool save = true; //enable saving of usage times to memory / flash
+int cyclesToSleep = 50; //set how many cycles to keep polling at high frequency with no use before sleeping
+int delayWhenActive = 50; //set the delay between readings during active use
+int delayWhenInActive = 800;  //set the delay between readings during inactive 
+int sleepDelay = delayWhenActive; //initially set the delay to as being active
+
+//set some initial values before we can take some readings
 float minVal = 10;
 float maxVal = 19;
 
-//set the polling frequency for active use and inactive use
-int delayWhenActive = 50;
-int delayWhenInActive = 800;
-int sleepDelay = delayWhenActive;
-
-bool save = true;
-
-bool firstRun = true;
-bool sendMessages = true;
-//count how may cycles the band has been inactive for
-int zeroCount = 0;
-int cyclesToSleep = 50;
-
-//keep track of if the thing is sleeping or not.
-bool sleeping = false;
+//tracking state
+bool firstRun = true; //first loop
+bool sendMessages = true; //are we sendign messages
+int zeroCount = 0; //count how may cycles the band has been inactive for
+bool sleeping = false; //keep track of if the thing is sleeping or not.
 
 void setup() {
   // this is the data we want to appear in the advertisement
@@ -203,14 +201,4 @@ float readStretch(){
   return reading;
    
 }
-/*
-//record the usage
-void recordUsage(){ 
-   usage[usageIndex] = millis();
-   usageIndex++; 
-   if (usageIndex > 256){
-    //write out to flash
-    
-     usageIndex=0; 
-   }
-}*/
+
