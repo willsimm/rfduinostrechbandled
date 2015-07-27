@@ -54,7 +54,7 @@ void setup() {
   digitalWrite(3, LOW);
   pinMode(4, OUTPUT); //LED Pin
   
-  //set some initial values NEEDED?
+  //set some initial values ??????
   minVal = readStretch();
   maxVal = minVal+10;
   
@@ -75,7 +75,7 @@ void loop() {
   RFduino_ULPDelay( sleepDelay );
 
 
-  // if the LED has been off for a number of cycles, go to long delay and record end of usage
+  // if the LED has been off for a number of cycles, go to inactive delay and record end of usage
   if (zeroCount > cyclesToSleep){
      sleepDelay = delayWhenInActive;
     if(save && !sleeping){     
@@ -91,6 +91,7 @@ void loop() {
   int LED=0;
 
   //if the reading is beyond the expect max, then the band must be disconnected.
+  //send to sleep and det delay to disconnected delay
   if (reading > bandMax){
      bandConnected=false; 
      sleeping = true;
@@ -100,7 +101,7 @@ void loop() {
   else {
       bandConnected=true;
   
-      //wait till we get a reading over 400 NOT NEEDED?  
+      //wait till we get a reading over 400 ?????  
       float threshold = 400;
       //if its the first run take a resting reading and use as min value
       if (firstRun == true){
