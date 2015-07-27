@@ -21,7 +21,8 @@ Will Simm w.simm@lancs.ac.uk
 bool save = true; //enable saving of usage times to memory / flash
 int cyclesToSleep = 50; //set how many cycles to keep polling at high frequency with no use before sleeping
 int delayWhenActive = 50; //set the delay between readings during active use
-int delayWhenInActive = 800;  //set the delay between readings during inactive 
+int delayWhenInActive = 800;  //set the delay between readings when use is below threshold 
+int delayWhenBandDisconnected = 3000; //set the delay between readings when the band is disconnected
 int sleepDelay = delayWhenActive; //initially set the delay to as being active
 
 //set some initial values before we can take some readings
@@ -33,6 +34,8 @@ bool firstRun = true; //first loop
 bool sendMessages = true; //are we sendign messages
 int zeroCount = 0; //count how may cycles the band has been inactive for
 bool sleeping = false; //keep track of if the thing is sleeping or not.
+bool bandConnected= true; //is there a rubber band connected?
+int bandMax = 1500; //max likely resistance of a band. Anything over this and the band must be disconnected
 
 void setup() {
   // this is the data we want to appear in the advertisement
@@ -71,6 +74,7 @@ void loop() {
     // sample once per second
   RFduino_ULPDelay( sleepDelay );
 
+
   // if the LED has been off for a number of cycles, go to long delay and record end of usage
   if (zeroCount > cyclesToSleep){
      sleepDelay = delayWhenInActive;
@@ -84,54 +88,72 @@ void loop() {
   //RFduinoBLE.sendFloat(readStretch());
   //read the sensor
   float reading = readStretch();
-  
-  //wait till we get a reading over 400 NOT NEEDED?  
-  float threshold = 400;
-  //if its the first run take a resting reading and use as min value
-  if (firstRun == true){
-    if (reading > threshold){
-       minVal = reading;
-       firstRun = false; 
+  int LED=0;
+
+  //if the reading is beyond the expect max, then the band must be disconnected.
+  if (reading > bandMax){
+     bandConnected=false; 
+     sleeping = true;
+     sleepDelay = delayWhenBandDisconnected;
+     LED=0;
     }
-  }
+  else {
+      bandConnected=true;
   
-  //update the min / max bounds if needed
-  if (reading > maxVal){
-   maxVal=reading; 
-  }
-  if (reading < minVal){
-    minVal = reading;
-  }
-  //set the LED
-  int LED = setLEDColourFade(reading);
-  //send a message over BLE
-  sendMessage(reading, LED);
-  
-  if (LED == 0){
-    zeroCount++; 
-  }
-  else{ 
-    //bring out of long delay and record start of usage
-    sleepDelay = delayWhenActive;
-    zeroCount = 0;
+      //wait till we get a reading over 400 NOT NEEDED?  
+      float threshold = 400;
+      //if its the first run take a resting reading and use as min value
+      if (firstRun == true){
+        if (reading > threshold){
+           minVal = reading;
+           firstRun = false; 
+        }
+      }
+      
+      //update the min / max bounds if needed
+      if (reading > maxVal){  
+       maxVal=reading;    
+      }
+      if (reading < minVal){
+        minVal = reading;
+      }
+      //set the LED
+      LED = setLEDColourFade(reading);
+      //send a message over BLE
+      sendMessage(reading, LED);
+      
+      //uses LED colour for scaling
+      //LED is zero so increment counter
+      if (LED == 0){
+        zeroCount++; 
+      }
+      else{ 
+        //bring out of long delay and record start of usage
+        sleepDelay = delayWhenActive;
+        zeroCount = 0;
+        
+        if (sleeping){
+          sleeping=false;
+           if(save){
+            saveUsage( millis() );
+           }
+        }  
     
-    if (sleeping){
-      sleeping=false;
-       if(save){
-        saveUsage( millis() );
-       }
-    }
-    
-  }
-  
+      }
+  }//end bandconencted test
   
   
   
   //echo out to serial
   Serial.print(" LED "); 
-  Serial.println(LED);
-  /*Serial.print(" reading "); 
-  Serial.print(reading);
+  Serial.print(LED);
+  Serial.print(" reading "); 
+  Serial.println(reading);
+  Serial.print(" bandconnected:  "); 
+  Serial.println(bandConnected);  
+  
+  
+  /*
   Serial.print(" max "); 
   Serial.print(maxVal);
   Serial.print(" min "); 
