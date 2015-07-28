@@ -70,7 +70,7 @@ public class BleService extends Service {
     private final IncomingHandler mHandler;
     private final Messenger mMessenger;
     private final List<Messenger> mClients = new LinkedList<>();
-    private final Map<String, BluetoothDevice> mDevices = new HashMap<>();
+    private static final Map<String, BluetoothDevice> mDevices = new HashMap<>();
 
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
@@ -142,6 +142,7 @@ public class BleService extends Service {
                         Log.d(TAG, "Registered");
                         break;
                     case MSG_UNREGISTER:
+                        Log.e(TAG, "Remove messenger!");
                         service.mClients.remove(msg.replyTo);
                         if (service.mState == State.CONNECTED && service.mGatt != null) {
                             service.mGatt.disconnect();
@@ -153,10 +154,12 @@ public class BleService extends Service {
                         Log.d(TAG, "Start Scan");
                         break;
                     case MSG_DEVICE_CONNECT:
-
-//                        Log.e(TAG, msg.obj.toString());
-
-                        service.connect((String) msg.obj);
+                        for(BluetoothDevice device : mDevices.values()){
+                            if((msg.obj).equals(device.getName())){
+                                service.connect(device.getAddress());
+                            }
+                        }
+                        //service.connect((String) msg.obj);
                         break;
                     case MSG_DEVICE_DISCONNECT:
                         if (service.mState == State.CONNECTED && service.mGatt != null) {
@@ -182,21 +185,21 @@ public class BleService extends Service {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             BluetoothDevice device = result.getDevice();
-            if (device != null && !mDevices.containsValue(device) && device.getName() != null && device.getName().equals(DEVICE_NAME)) {
+            if (device != null && !mDevices.containsValue(device) && device.getName() != null) {
                 mDevices.put(device.getAddress(), device);
                 Message msg = Message.obtain(null, MSG_DEVICE_FOUND);
                 if (msg != null) {
                     Bundle bundle = new Bundle();
 
-                    String[] addresses = mDevices.keySet().toArray(new String[mDevices.size()]);
+                    //The Old way via the BL address
+                    //String[] addresses = mDevices.keySet().toArray(new String[mDevices.size()]);
 
-//                    String[] addresses = new String[mDevices.size()];
-//
-//                    //iterating over values only
-//                    int i = 0;
-//                    for(BluetoothDevice device1 : mDevices.values()){
-//                        addresses[i++] = (device1.getName());
-//                    }
+                    //the new way via the device name
+                    String[] addresses = new String[mDevices.size()];
+                    int i = 0;
+                    for(BluetoothDevice device1 : mDevices.values()){
+                        addresses[i++] = (device1.getName());
+                    }
 
                     bundle.putStringArray(KEY_MAC_ADDRESSES, addresses);
                     msg.setData(bundle);
@@ -310,6 +313,7 @@ public class BleService extends Service {
                     break;
                 case 1:
                     //wristband is set to active mode - receive data constantly
+                    parseLiveData(characteristic.getStringValue(0));
                     break;
                 case 2:
                     //wristband is set to historic mode
@@ -390,6 +394,10 @@ public class BleService extends Service {
         return success;
     }
 
+    private void parseLiveData(String receivedMessage){
+        Log.e(TAG, "Live data received: " + receivedMessage);
+    }
+
     private void parseHistoricData(String receivedMessage){
         receivedValues = receivedMessage.split("/");
         value1 = Integer.parseInt(receivedValues[0]);
@@ -415,7 +423,7 @@ public class BleService extends Service {
             }
         }
         else{
-            //this is just parsing historic data - start/end time :)
+            //this is just reading historic data - start/end time :)
             diff = value2 - value1;
             db.addHistoricDataEntry(new HistoricDataEntry((startTime + value1), diff));
         }

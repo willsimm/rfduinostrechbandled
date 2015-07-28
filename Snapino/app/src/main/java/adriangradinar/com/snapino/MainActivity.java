@@ -2,6 +2,7 @@ package adriangradinar.com.snapino;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -15,8 +16,10 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 
 import adriangradinar.com.snapino.services.BleService;
 
@@ -30,6 +33,7 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
     private BleService.State mState = BleService.State.UNKNOWN;
 
     private MenuItem mRefreshItem = null;
+    private static ProgressDialog progressDialog;
 
     private DeviceListFragment mDeviceList = DeviceListFragment.newInstance();
     private DisplayFragment mDisplay = DisplayFragment.newInstance();
@@ -104,7 +108,7 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         mRefreshItem = menu.findItem(R.id.action_refresh);
-        //mDeviceListFragment = DeviceListFragment.newInstance(null);
+//        mDeviceListFragment = DeviceListFragment.newInstance(null);
         return true;
     }
 
@@ -160,7 +164,7 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
         }
     }
 
-    private static class IncomingHandler extends Handler {
+    private class IncomingHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
 
         public IncomingHandler(MainActivity activity) {
@@ -170,6 +174,9 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
         @Override
         public void handleMessage(Message msg) {
             MainActivity activity = mActivity.get();
+
+            Log.e(TAG, "Msg: " + msg.what);
+
             if (activity != null) {
                 switch (msg.what) {
                     case BleService.MSG_STATE_CHANGED:
@@ -178,15 +185,27 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
                     case BleService.MSG_DEVICE_FOUND:
                         Bundle data = msg.getData();
                         if (data != null && data.containsKey(BleService.KEY_MAC_ADDRESSES)) {
+
+
+
+
+
+
                             activity.mDeviceList.setDevices(activity, data.getStringArray(BleService.KEY_MAC_ADDRESSES));
                         }
                         break;
-                    case BleService.MSG_DEVICE_DATA:
+                    case BleService.MSG_WRITE_DATA:
+                        showDialog();
                         break;
                 }
             }
             super.handleMessage(msg);
         }
+    }
+
+    private void showDialog(){
+        progressDialog = ProgressDialog.show(getApplicationContext(), "Title", "Message", true);
+        progressDialog.show();
     }
 
     private void stateChanged(BleService.State newState) {
@@ -211,6 +230,7 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
                 mDeviceList.setScanning(false);
                 break;
             case CONNECTED:
+                mRefreshItem.setVisible(false);
                 FragmentTransaction tx = getFragmentManager().beginTransaction();
                 tx.replace(R.id.main_content, mDisplay);
                 tx.commit();

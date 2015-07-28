@@ -26,4 +26,5 @@
 		android:id="@+id/btn_active"
 		android:layout_below="@+id/btn_passive"
 		android:layout_centerHorizontal="true" />
+
 </RelativeLayout>

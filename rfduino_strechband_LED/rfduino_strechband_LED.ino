@@ -86,7 +86,7 @@ void setup() {
   
   
   //fill 4 pages of flash for testing
-  fillFlashMemory(4);
+  //fillFlashMemory(4);
   
 }
 
@@ -212,15 +212,18 @@ void RFduinoBLE_onAdvertisement(bool start){}
 
 void RFduinoBLE_onConnect(){
   //turnOnLed(connection_led);
+  Serial.println("BLE connected");
 }
 
 void RFduinoBLE_onDisconnect(){
+  Serial.println("BLE disconnected");
   //turnOffLed(connection_led);
   //turnOffLed(data_was_requesed_led);
   mode_active = false;
 }
 
 void RFduinoBLE_onReceive(char *data, int len){
+  Serial.println("BLE message recieved");
   //turnOffLed(connection_led);
   //turnOnLed(data_was_requesed_led);
   Serial.print("flag recieved, value:");
@@ -241,26 +244,29 @@ void readFlag(int flag){
   switch(flag){
     case 0:
       //set Snapino's mode to PASSIVE
-      mode_active = false;
+      if(mode_active){
+        mode_active = false;
+      }
       Serial.println(" mode passive");
       sendMessage("Mode passive");
       break;
     case 1:
       //set Snapino's mode to ACTIVE
-      Serial.println(" mode active");
-      sendMessage("Mode active");
-      //send float readings 
-      
-      
-      mode_active = true;
+      if(!mode_active && !send_history){
+        Serial.println("active");
+        mode_active = true;
+      }
       break;
     case 2:      
       //ends live data streaming
-      //send current time twice as a pair
+      //send current time 
       //then send historic values as pairs
-      //send a pair of zeros to finish
-       Serial.println(" mode history");
-      send_history = true;  
+      if(!send_history){
+        Serial.println("  history");
+        mode_active = false;
+        RFduino_ULPDelay(1000); //take a second break so we don't confuse the phone between mode
+        send_history = true;
+      }
       break;
     default:
       //why are we sending unaccounted flags?!?
@@ -313,44 +319,24 @@ void sendHistoryBLE(){
 
 
 
-
-
-
 //Write out the value to the LED
 void setLEDColour(int LED){
     analogWrite(4, LED); // green
 }
 
-
+//works out how bright to set the LED
 int setLEDColourFade(float reading){
-  
-  /*Serial.print("reading");
-  Serial.println(reading);
-  Serial.print("minVal");
-  Serial.println(minVal);
-  Serial.print("maxal");
-  Serial.println(maxVal);  */
-  
-  
-  
-  
-  
   int LED;
   // add a fudge or deadzone of minimum strech
   float fudge = minVal + 100;
-  //Serial.print("fusdge");
-  //Serial.println(fudge);
   if (fudge >= maxVal){
    fudge = maxVal;
   } 
-  //Serial.print("fusdge");
-  //Serial.println(fudge);
   //scale the reading to the 255 of the LED PWM
   if (reading > fudge){
      LED = (int) (reading - fudge) / (maxVal-fudge) *255 ;
   }
   else {
-    //Serial.println("LED 0");
     LED=0;
   }
   
@@ -361,19 +347,20 @@ int setLEDColourFade(float reading){
 
 //send a BLE message only if the band is being stretched, send one zero and then hold if not
 void sendLiveMessage(float reading, int LED){
-  Serial.println("senlive");
-  Serial.print("reading");
-  Serial.println(reading);
-  Serial.print("led");
-  Serial.println(LED);
+
   if (LED >0){
-    Serial.println("sending live");
-    RFduinoBLE.sendFloat(reading);
+
+    String stringVal = "";     
+    stringVal+=String(int(reading))+ "."+String(getDecimal(reading)); 
+    
+    //RFduinoBLE.sendFloat(reading);
     //RFduinoBLE.sendInt(LED);
+    sendMessage(stringVal);
     sendMessages = true;
   }
   if (sendMessages && (LED == 0)){
-    RFduinoBLE.sendFloat(0);
+    //RFduinoBLE.sendFloat(0);
+    sendMessage(String(LED));
     sendMessages = false;
   }
 }
@@ -405,4 +392,16 @@ void resetParams(){
  firstRun = true; //first loop 
   
   
+}
+
+//http://www.arduino-hacks.com/float-to-string-float-to-character-array-arduino/
+//function to extract decimal part of float
+long getDecimal(float val)
+{
+ int intPart = int(val);
+ long decPart = 1000*(val-intPart); //I am multiplying by 1000 assuming that the foat values will have a maximum of 3 decimal places
+                                   //Change to match the number of decimal places you need
+ if(decPart>0)return(decPart);           //return the decimal part of float number if it is available 
+ else if(decPart<0)return((-1)*decPart); //if negative, multiply by -1
+ else if(decPart=0)return(00);           //return 0 if decimal part of float number is not available
 }

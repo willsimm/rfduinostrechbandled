@@ -1,6 +1,7 @@
 package adriangradinar.com.snapino;
 
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -59,7 +60,6 @@ public class DisplayFragment extends Fragment {
 			mService = null;
 		}
 	};
-
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
