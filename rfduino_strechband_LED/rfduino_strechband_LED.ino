@@ -39,8 +39,8 @@ int delayWhenBandDisconnected = 3000; //set the delay between readings when the 
 int sleepDelay = delayWhenActive; //initially set the delay to as being active
 
 //set some initial values before we can take some readings
-float minVal = 10;
-float maxVal = 19;
+float minVal =500;
+float maxVal =510;
 
 //tracking state
 bool firstRun = true; //first loop
@@ -71,8 +71,8 @@ void setup() {
   pinMode(4, OUTPUT); //LED Pin
   
   //set some initial values ??????
-  minVal = readStretch();
-  maxVal = minVal+10;
+//  minVal = readStretch();
+  //maxVal = minVal+10;
   
   /*
   Serial.print(" min flash ");
@@ -99,8 +99,9 @@ void loop() {
     
     // if the LED has been off for a number of cycles, go to inactive delay and record end of usage
     if (zeroCount > cyclesToSleep){
+     
        sleepDelay = delayWhenInActive;
-      if(save && !sleeping){     
+      if( !sleeping){     
          //end of usage - knock the time back by the timeout period
          saveUsage( millis() - (delayWhenActive*cyclesToSleep) );
          sleeping = true;
@@ -113,24 +114,42 @@ void loop() {
   
     //if the reading is beyond the expect max, then the band must be disconnected.
     //send to sleep and det delay to disconnected delay
+    //reset params
     if (reading > bandMax){
-       bandConnected=false; 
-       sleeping = true;
-       sleepDelay = delayWhenBandDisconnected;
-       LED=0;
+      
+       if (bandConnected){
+         bandConnected=false; 
+         Serial.println(" band disconnected "); 
+       }
+       
+       if ( !sleeping){
+         saveUsage( millis());
+         sleeping = true;
+         sleepDelay = delayWhenBandDisconnected;
+         LED=0;
+         setLEDColour(LED);
+       }
       }
     else {
-        bandConnected=true;
+        if (!bandConnected){
+          // band has been connected!
+          bandConnected=true;
+          Serial.println(" band connected "); 
+          resetParams();
+        }
     
         //wait till we get a reading over 400 ?????  
         float threshold = 400;
         //if its the first run take a resting reading and use as min value
         if (firstRun == true){
+          Serial.println(" first run ");
           if (reading > threshold){
              minVal = reading;
              firstRun = false; 
           }
         }
+        
+
         
         //update the min / max bounds if needed
         if (reading > maxVal){  
@@ -141,6 +160,8 @@ void loop() {
         }
         //set the LED
         LED = setLEDColourFade(reading);
+        
+        
         //send a message over BLE
         if(mode_active){
           //transmitLiveStream();
@@ -169,15 +190,15 @@ void loop() {
     }//end bandconencted test
     
     
-    
+    /*
     //echo out to serial
     Serial.print(" LED "); 
     Serial.print(LED);
-    Serial.print(" reading "); 
+    Serial.print(" reading B"); 
     Serial.println(reading);
     Serial.print(" bandconnected:  "); 
     Serial.println(bandConnected);    
-    
+    */
     }// end history check 
 }
 
@@ -293,17 +314,34 @@ void setLEDColour(int LED){
 
 
 int setLEDColourFade(float reading){
+  
+  /*Serial.print("reading");
+  Serial.println(reading);
+  Serial.print("minVal");
+  Serial.println(minVal);
+  Serial.print("maxal");
+  Serial.println(maxVal);  */
+  
+  
+  
+  
+  
   int LED;
   // add a fudge or deadzone of minimum strech
   float fudge = minVal + 100;
+  //Serial.print("fusdge");
+  //Serial.println(fudge);
   if (fudge >= maxVal){
    fudge = maxVal;
   } 
+  //Serial.print("fusdge");
+  //Serial.println(fudge);
   //scale the reading to the 255 of the LED PWM
   if (reading > fudge){
      LED = (int) (reading - fudge) / (maxVal-fudge) *255 ;
   }
   else {
+    //Serial.println("LED 0");
     LED=0;
   }
   
@@ -339,4 +377,16 @@ float readStretch(){
   
   return reading;
    
+}
+
+void resetParams(){
+  
+ //set some initial values before we can take some readings
+ minVal =500;
+ maxVal =510;
+
+//tracking state
+ firstRun = true; //first loop 
+  
+  
 }
