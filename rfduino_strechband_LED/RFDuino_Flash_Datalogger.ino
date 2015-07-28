@@ -227,6 +227,7 @@ int sendHistory(int page, unsigned long readOut[256]){
   
   int ss=true;
   unsigned long start=0;
+  String toSend;
 
   for (int c = 0; c < 256; c++) { 
     //Serial.println(c);
@@ -236,6 +237,11 @@ int sendHistory(int page, unsigned long readOut[256]){
     }
     else{      
        //SEND individual values OVER BLE HERE
+       
+       toSend = String(start) +  "/" + String(readOut[c]);
+       sendMessage(toSend);
+       
+       
        /*
        Serial.print(" start: ");
        Serial.print(start);
