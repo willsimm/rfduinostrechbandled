@@ -165,7 +165,7 @@ int readOutWholeFlash(){
       sendHistory(page, p->time);      
     }
   }
-  Serial.println("not loped");
+  Serial.println("not looped");
   //count down to flash pages
   //Serial.print("max f");
   //Serial.println(maxFlashPage);
@@ -202,12 +202,31 @@ int readOutWholeFlash(){
 
 //dump out the contents of the ram buffer
 void readOutRAMValues(){
-   Serial.print("dumping ram");
+   Serial.println("dumping ram");
+   
+   int ss=true;
+   unsigned long start=0;
+   String toSend;
+   
    for (int c = 0; c < timeInRAMCount; c++) { 
-      Serial.print("ram index: ");
-      Serial.print(c);
-      Serial.print(" ram value: ");
-      Serial.println(usage.time[c] );
+     
+    if (ss){
+      start = usage.time[c];
+      ss = !ss;
+    }
+    else{      
+       //SEND individual values OVER BLE HERE
+       toSend = String(start) +  "/" + String(usage.time[c]);
+       sendMessage(toSend);
+       Serial.print("sending: ");
+       Serial.println(toSend);
+       ss=!ss;
+    }     
+
+      //Serial.print("ram index: ");
+      //Serial.print(c);
+      //Serial.print(" ram value: ");
+      //Serial.println(usage.time[c] );
   }
 
 }
@@ -253,6 +272,22 @@ int sendHistory(int page, unsigned long readOut[256]){
    }
   return 1;
 }
+
+void fillFlashMemory(int pagesToFill){
+    int multiplier=1;
+  for (int numPages = 0; numPages < pagesToFill; numPages++)  {  
+      //fill the ram
+      for (int c = 0; c < 256; c++)  {   
+        saveUsage( c + multiplier);
+        
+      }
+    multiplier++;
+  }
+  
+  
+  
+}
+
 
 /*
 void setup() {

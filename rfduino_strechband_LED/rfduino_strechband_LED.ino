@@ -84,6 +84,10 @@ void setup() {
     saveUsage( millis() );
   }
   
+  
+  //fill 4 pages of flash for testing
+  fillFlashMemory(4);
+  
 }
 
 void loop() {
@@ -160,12 +164,12 @@ void loop() {
         }
         //set the LED
         LED = setLEDColourFade(reading);
-        
-        
+      
+     
         //send a message over BLE
         if(mode_active){
           //transmitLiveStream();
-          sendMessage(reading, LED);
+          sendLiveMessage(reading, LED);
         }
         
         
@@ -219,6 +223,8 @@ void RFduinoBLE_onDisconnect(){
 void RFduinoBLE_onReceive(char *data, int len){
   //turnOffLed(connection_led);
   //turnOnLed(data_was_requesed_led);
+  Serial.print("flag recieved, value:");
+  Serial.println(String(data[0]));
   readFlag(data[0]);
 }
 /*
@@ -236,21 +242,24 @@ void readFlag(int flag){
     case 0:
       //set Snapino's mode to PASSIVE
       mode_active = false;
+      Serial.println(" mode passive");
       sendMessage("Mode passive");
       break;
     case 1:
       //set Snapino's mode to ACTIVE
+      Serial.println(" mode active");
       sendMessage("Mode active");
       //send float readings 
       
       
-//      mode_active = true;
+      mode_active = true;
       break;
     case 2:      
       //ends live data streaming
       //send current time twice as a pair
       //then send historic values as pairs
       //send a pair of zeros to finish
+       Serial.println(" mode history");
       send_history = true;  
       break;
     default:
@@ -285,13 +294,13 @@ void sendHistoryBLE(){
    //now read out the contents of all the flash pages we've written
    readOutWholeFlash();
    //and whats left in the RAM buffer
-   //readOutRAMValues();
+   readOutRAMValues();
   
-  
+  /*
    for (int c = 0; c < 100000; c++){
      toSend = String(random(10000,50000)) +  "/" + String(random(10000,50000));
      sendMessage(toSend);
-   }
+   }*/
    
    
    //finish with current timestamp
@@ -351,9 +360,16 @@ int setLEDColourFade(float reading){
 }
 
 //send a BLE message only if the band is being stretched, send one zero and then hold if not
-void sendMessage(float reading, int LED){
+void sendLiveMessage(float reading, int LED){
+  Serial.println("senlive");
+  Serial.print("reading");
+  Serial.println(reading);
+  Serial.print("led");
+  Serial.println(LED);
   if (LED >0){
+    Serial.println("sending live");
     RFduinoBLE.sendFloat(reading);
+    //RFduinoBLE.sendInt(LED);
     sendMessages = true;
   }
   if (sendMessages && (LED == 0)){

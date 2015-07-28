@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<Button
+		android:layout_width="150dp"
+		android:layout_height="wrap_content"
+		android:text="Historic Data"
+		android:id="@+id/btn_get_historic_data"
+		android:layout_below="@+id/btn_active"
+		android:layout_centerHorizontal="true" />
+
+	<Button
+		android:layout_width="150dp"
+		android:layout_height="wrap_content"
+		android:text="Set Passive"
+		android:id="@+id/btn_passive"
+		android:layout_alignParentTop="true"
+		android:layout_centerHorizontal="true" />
+
+	<Button
+		android:layout_width="150dp"
+		android:layout_height="wrap_content"
+		android:text="Set Active"
+		android:id="@+id/btn_active"
+		android:layout_below="@+id/btn_passive"
+		android:layout_centerHorizontal="true" />
+</RelativeLayout>
