@@ -26,6 +26,7 @@ public class DisplayFragment extends Fragment {
     private static final int SET_SNAPINO_PASSIVE = 0;
     private static final int SET_SNAPINO_ACTIVE = 1;
     private static final int GET_HISTORIC_DATA = 2;
+    private static final int GET_BATTERY_LEVELS = 3;
 
 	public DisplayFragment() {}
 
@@ -36,6 +37,8 @@ public class DisplayFragment extends Fragment {
 	private Button getHistoricDataButton = null;
 	private Button setModeActiveButton = null;
 	private Button setModePassiveButton = null;
+	private Button getBatteryLevelsButton = null;
+
 	private Intent mServiceIntent;
 	private Messenger mService = null;
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -75,6 +78,9 @@ public class DisplayFragment extends Fragment {
 
             getHistoricDataButton = (Button) v.findViewById(R.id.btn_get_historic_data);
             getHistoricDataButton.setOnClickListener(getHistoricData);
+
+            getBatteryLevelsButton = (Button) v.findViewById(R.id.btn_battery_level);
+            getBatteryLevelsButton.setOnClickListener(getBatteryLevels);
 		}
 		return v;
 	}
@@ -115,6 +121,21 @@ public class DisplayFragment extends Fragment {
             Message msg = Message.obtain(null, BleService.MSG_WRITE_DATA);
             Bundle bundle = new Bundle();
             bundle.putInt("flag", GET_HISTORIC_DATA);
+            msg.setData(bundle);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    View.OnClickListener getBatteryLevels = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Message msg = Message.obtain(null, BleService.MSG_WRITE_DATA);
+            Bundle bundle = new Bundle();
+            bundle.putInt("flag", GET_BATTERY_LEVELS);
             msg.setData(bundle);
             try {
                 mService.send(msg);

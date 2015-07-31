@@ -27,4 +27,14 @@
 		android:layout_below="@+id/btn_passive"
 		android:layout_centerHorizontal="true" />
 
+	<Button
+		style="?android:attr/buttonStyleSmall"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Battery Levels"
+		android:id="@+id/btn_battery_level"
+		android:layout_below="@+id/btn_get_historic_data"
+		android:layout_alignStart="@+id/btn_get_historic_data"
+		android:layout_alignEnd="@+id/btn_get_historic_data" />
+
 </RelativeLayout>

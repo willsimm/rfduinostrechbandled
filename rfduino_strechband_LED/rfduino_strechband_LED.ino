@@ -17,6 +17,7 @@ Will Simm w.simm@lancs.ac.uk & Adrian Gradinar 2015
 //int live_stream_value = 0;
 bool mode_active = false;
 bool send_history = false;
+bool battery=false;
 
 //int val = 0;
 //int connection_led = 2;
@@ -52,12 +53,12 @@ int bandMax = 1500; //max likely resistance of a band. Anything over this and th
 
 
 
-
-
+float reading;
+int LED;
 
 void setup() {
   Serial.begin(9600);
-  RFduinoBLE.deviceName = "Snapino";
+  RFduinoBLE.deviceName = "SnapinoDemo";
 
   //pinMode(connection_led, OUTPUT);
   //pinMode(data_was_requesed_led, OUTPUT);
@@ -88,10 +89,22 @@ void setup() {
   //fill 4 pages of flash for testing
   //fillFlashMemory(4);
   
+  
+
+  
 }
 
 void loop() {
   //if history has been requested then get on with that
+
+  
+  
+  if (battery){
+    sendBattery();
+    battery=false;
+  }
+  
+  
   if(send_history){
     sendHistoryBLE();
   }
@@ -113,8 +126,8 @@ void loop() {
     }
     
     //read the sensor
-    float reading = readStretch();
-    int LED=0;
+    reading = readStretch();
+    LED=0;
   
     //if the reading is beyond the expect max, then the band must be disconnected.
     //send to sleep and det delay to disconnected delay
@@ -193,16 +206,16 @@ void loop() {
         }
     }//end bandconencted test
     
-    
     /*
+    
     //echo out to serial
     Serial.print(" LED "); 
     Serial.print(LED);
-    Serial.print(" reading B"); 
+    Serial.print(" reading "); 
     Serial.println(reading);
     Serial.print(" bandconnected:  "); 
-    Serial.println(bandConnected);    
-    */
+    Serial.println(bandConnected);    */
+    
     }// end history check 
 }
 
@@ -266,6 +279,11 @@ void readFlag(int flag){
         mode_active = false;
         RFduino_ULPDelay(1000); //take a second break so we don't confuse the phone between mode
         send_history = true;
+      }
+      break;
+    case 3:
+      if (!battery){
+        battery = true;
       }
       break;
     default:
@@ -369,6 +387,9 @@ void sendLiveMessage(float reading, int LED){
 float readStretch(){
   //Turn on sensor
   digitalWrite(3, HIGH);
+  analogSelection(AIN_1_3_PS);
+  analogReference(DEFAULT);
+  
   //read in current strech from ADC
   float reading = analogRead(2);
   //turn off sensor
@@ -405,3 +426,17 @@ long getDecimal(float val)
  else if(decPart<0)return((-1)*decPart); //if negative, multiply by -1
  else if(decPart=0)return(00);           //return 0 if decimal part of float number is not available
 }
+
+//send battery level
+void sendBattery(){
+  analogReference(VBG); // Sets the Reference to 1.2V band gap           
+  analogSelection(VDD_1_3_PS);  //Selects VDD with 1/3 prescaling as the analog source
+  int sensorValue = analogRead(1); // the pin has no meaning, it uses VDD pin
+  float batteryVoltage = sensorValue * (3.6 / 1023.0); // convert value to voltage
+  Serial.print("Battery Voltage: ");
+  Serial.println(batteryVoltage); 
+  
+  String stringVal = String(int(batteryVoltage))+ "."+String(getDecimal(batteryVoltage)); 
+  sendMessage(stringVal);
+}
+

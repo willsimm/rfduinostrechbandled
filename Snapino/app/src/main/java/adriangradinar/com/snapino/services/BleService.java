@@ -107,7 +107,7 @@ public class BleService extends Service {
 
     private String[] receivedValues;
     private int value1, value2, diff;
-    private long startTime;
+    private long startTime, lastStartTime;
     private int sentFlag;
 
     @Override
@@ -115,7 +115,7 @@ public class BleService extends Service {
         super.onCreate();
 
         db = new DatabaseHandler(this);
-        db.deleteAllRecords();
+//        db.deleteAllRecords();
         sharedPreferences = getSharedPreferences(getString(R.string.shared_preferences), 0);
     }
 
@@ -319,6 +319,9 @@ public class BleService extends Service {
                     //wristband is set to historic mode
                     parseHistoricData(characteristic.getStringValue(0));
                     break;
+                case 3:
+                    parseBatteryLevel(characteristic.getStringValue(0));
+                    break;
                 default:
                     //bugger...
                     Log.e(TAG, "Wrong flag!");
@@ -405,27 +408,47 @@ public class BleService extends Service {
         if(value1 == -1){
             //this is where we get the current time (from the device) and calculate the original time (when the device started recoding)
             if(!isStartTimeSet){
-                startTime = sharedPreferences.getLong("startTime", 0);
-                if(startTime == 0){
-                    startTime = Calendar.getInstance().getTimeInMillis() - value2;
-                    sharedPreferences.edit().putLong("startTime", startTime).commit();
-                }
+                startTime = Calendar.getInstance().getTimeInMillis() - value2;
+//                startTime = sharedPreferences.getLong("startTime", 0);
+//                if(startTime == 0){
+//
+//                    sharedPreferences.edit().putLong("startTime", startTime).commit();
+//                }
                 isStartTimeSet = true;
             }
+            lastStartTime = db.getLastEntryStartTime();
         }
         else if(value1 == -2){
             //this is the end of the transmitted data - we'll see what we want to do with it!
             Log.e(TAG, "Transmission ended!");
 
             ArrayList<HistoricDataEntry> entries = db.getAllHistoricEntries();
+            Log.e(TAG, "total: " + entries.size());
             for(HistoricDataEntry entry : entries){
-                Log.e(TAG, "\tStart time: " + Utils.parseDate(entry.getStartTime()) + "\tDuration: " + entry.getDuration());
+                Log.e(TAG, "\tStart time: " + entry.getStartTime() +
+                        "\t\tEnd time: " + entry.getEndTime() +
+                        "\t\tReal time: " + Utils.parseDate(entry.getRealTime()) +
+                        "\t\tDuration: " + entry.getDuration());
             }
         }
         else{
             //this is just reading historic data - start/end time :)
-            diff = value2 - value1;
-            db.addHistoricDataEntry(new HistoricDataEntry((startTime + value1), diff));
+            //and saving to the sqlite database
+
+            //verify if we already have saved data in the database
+
+//            Log.e(TAG, "Transmitted data: " + value1 + " - " + value2);
+//
+//            Log.e(TAG, ""+ lastStartTime);
+//            Log.e(TAG, "Time: " + startTime);
+
+            if(value1 > lastStartTime){
+                db.addHistoricDataEntry(new HistoricDataEntry(value1, value2, (startTime + value1), (value2 - value1)));
+            }
         }
+    }
+
+    private void parseBatteryLevel(String batteryLevel){
+        Log.e(TAG, batteryLevel);
     }
 }

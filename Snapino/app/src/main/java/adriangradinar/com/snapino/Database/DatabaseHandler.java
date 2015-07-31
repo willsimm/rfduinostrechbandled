@@ -24,6 +24,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String TBL_HISTORIC_DATA = "tbl_historic_data";
     private static final String HISTORIC_ID = "historic_id";
     private static final String START_TIME = "start_time";
+    private static final String END_TIME = "end_time";
+    private static final String REAL_TIME = "real_time";
     private static final String DURATION = "duration";
 
     public DatabaseHandler(Context context){
@@ -34,7 +36,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         //declare and create the transaction table
         String CREATE_HISTORIC_DATA_TABLE = "CREATE TABLE IF NOT EXISTS " + TBL_HISTORIC_DATA + "("
-                + HISTORIC_ID + " INTEGER PRIMARY KEY, " + START_TIME + " TEXT, " + DURATION + " INTEGER"
+                + HISTORIC_ID + " INTEGER PRIMARY KEY, " + START_TIME + " TEXT, "
+                + END_TIME + " TEXT, " + REAL_TIME + " TEXT, "
+                + DURATION + " INTEGER"
                 + ")";
         db.execSQL(CREATE_HISTORIC_DATA_TABLE);
     }
@@ -48,6 +52,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //allow the database to create the values to be insert
         ContentValues values = new ContentValues();
         values.put(START_TIME, entry.getStartTime());
+        values.put(END_TIME, entry.getEndTime());
+        values.put(REAL_TIME, entry.getRealTime());
         values.put(DURATION, entry.getDuration());
 
         //insert the data into the database
@@ -69,7 +75,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         if(cursor.moveToFirst()){
             do{
                 //create a new temporary transaction
-                HistoricDataEntry historicDataEntry = new HistoricDataEntry(cursor.getInt(0), cursor.getLong(1), cursor.getInt(2));
+                HistoricDataEntry historicDataEntry = new HistoricDataEntry(cursor.getInt(0), cursor.getLong(1), cursor.getLong(2), cursor.getLong(3), cursor.getInt(4));
                 //add to the transaction array list
                 historicDataEntries.add(historicDataEntry);
             }
@@ -83,5 +89,18 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TBL_HISTORIC_DATA,null,null);
         db.close();
+    }
+
+    public long getLastEntryStartTime(){
+        String sql = "SELECT " + START_TIME + " FROM " + TBL_HISTORIC_DATA + " ORDER BY " + HISTORIC_ID + " DESC LIMIT 1";
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        Cursor cursor = db.rawQuery(sql, null);
+
+        //save every event to the events list array
+        if(cursor.moveToFirst()){
+            return cursor.getInt(0);
+        }
+        return 0;
     }
 }
