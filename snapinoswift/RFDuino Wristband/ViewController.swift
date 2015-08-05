@@ -337,7 +337,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                     println(str)
                     batteryView.stringValue = "history received"
                 } else {
-                    println("not a valid UTF-8 sequence")
+                    println("not a valid UTF-8 sequence") 
                 }
                 
                 //flagSent=0

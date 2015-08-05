@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>22ED7BC0-8F9C-4567-9880-85AE0D29B2F8</string>
+	<key>IDESourceControlProjectName</key>
+	<string>RFDuino comms</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>503D10A0D4DA9EAC8FD55BEA824BE1230E12C61E</key>
+		<string>https://github.com/willsimm/rfduinostrechbandled.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>snapinoswift/RFDuino comms.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>503D10A0D4DA9EAC8FD55BEA824BE1230E12C61E</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/willsimm/rfduinostrechbandled.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>503D10A0D4DA9EAC8FD55BEA824BE1230E12C61E</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>503D10A0D4DA9EAC8FD55BEA824BE1230E12C61E</string>
+			<key>IDESourceControlWCCName</key>
+			<string>rfduinostrechbandled</string>
+		</dict>
+	</array>
+</dict>
+</plist>
