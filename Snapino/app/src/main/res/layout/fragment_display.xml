@@ -37,4 +37,13 @@
 		android:layout_alignStart="@+id/btn_get_historic_data"
 		android:layout_alignEnd="@+id/btn_get_historic_data" />
 
+	<Button
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Dump History"
+		android:id="@+id/dump_history_btn"
+		android:layout_below="@+id/btn_battery_level"
+		android:layout_alignStart="@+id/btn_battery_level"
+		android:layout_alignEnd="@+id/btn_battery_level" />
+
 </RelativeLayout>

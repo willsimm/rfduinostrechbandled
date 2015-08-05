@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import adriangradinar.com.snapino.Classes.Utils;
 import adriangradinar.com.snapino.services.BleService;
 
 public class DisplayFragment extends Fragment {
@@ -38,6 +39,7 @@ public class DisplayFragment extends Fragment {
 	private Button setModeActiveButton = null;
 	private Button setModePassiveButton = null;
 	private Button getBatteryLevelsButton = null;
+	private Button dumpHistoricDataBtn = null;
 
 	private Intent mServiceIntent;
 	private Messenger mService = null;
@@ -81,6 +83,9 @@ public class DisplayFragment extends Fragment {
 
             getBatteryLevelsButton = (Button) v.findViewById(R.id.btn_battery_level);
             getBatteryLevelsButton.setOnClickListener(getBatteryLevels);
+
+            dumpHistoricDataBtn = (Button) v.findViewById(R.id.dump_history_btn);
+            dumpHistoricDataBtn.setOnClickListener(dumpHistoricDataListener);
 		}
 		return v;
 	}
@@ -142,6 +147,13 @@ public class DisplayFragment extends Fragment {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        }
+    };
+
+    View.OnClickListener dumpHistoricDataListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Utils.writeHistoricDataToFile(getActivity().getApplicationContext(), "historic_data.csv");
         }
     };
 

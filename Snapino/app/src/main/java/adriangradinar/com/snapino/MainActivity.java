@@ -16,10 +16,8 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 
 import adriangradinar.com.snapino.services.BleService;
 
@@ -185,12 +183,6 @@ public class MainActivity extends Activity implements DeviceListFragment.OnDevic
                     case BleService.MSG_DEVICE_FOUND:
                         Bundle data = msg.getData();
                         if (data != null && data.containsKey(BleService.KEY_MAC_ADDRESSES)) {
-
-
-
-
-
-
                             activity.mDeviceList.setDevices(activity, data.getStringArray(BleService.KEY_MAC_ADDRESSES));
                         }
                         break;

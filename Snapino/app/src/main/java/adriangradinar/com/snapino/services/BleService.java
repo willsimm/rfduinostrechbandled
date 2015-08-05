@@ -27,10 +27,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -39,6 +36,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import adriangradinar.com.snapino.Classes.HistoricDataEntry;
+import adriangradinar.com.snapino.Classes.LiveDataEntry;
 import adriangradinar.com.snapino.Classes.Utils;
 import adriangradinar.com.snapino.Database.DatabaseHandler;
 import adriangradinar.com.snapino.R;
@@ -398,7 +396,9 @@ public class BleService extends Service {
     }
 
     private void parseLiveData(String receivedMessage){
-        Log.e(TAG, "Live data received: " + receivedMessage);
+        long time = Calendar.getInstance().getTimeInMillis();
+        db.addLiveDataEntry(new LiveDataEntry(time, Double.parseDouble(receivedMessage)));
+        Log.e(TAG, "Live data: " + Utils.parseDate(time) + " - " + receivedMessage);
     }
 
     private void parseHistoricData(String receivedMessage){
@@ -422,26 +422,20 @@ public class BleService extends Service {
             //this is the end of the transmitted data - we'll see what we want to do with it!
             Log.e(TAG, "Transmission ended!");
 
-            ArrayList<HistoricDataEntry> entries = db.getAllHistoricEntries();
-            Log.e(TAG, "total: " + entries.size());
-            for(HistoricDataEntry entry : entries){
-                Log.e(TAG, "\tStart time: " + entry.getStartTime() +
-                        "\t\tEnd time: " + entry.getEndTime() +
-                        "\t\tReal time: " + Utils.parseDate(entry.getRealTime()) +
-                        "\t\tDuration: " + entry.getDuration());
-            }
+//            ArrayList<HistoricDataEntry> entries = db.getAllHistoricEntries();
+//            Log.e(TAG, "total: " + entries.size());
+//            for(HistoricDataEntry entry : entries){
+//                Log.e(TAG, "\tStart time: " + entry.getStartTime() +
+//                        "\t\tEnd time: " + entry.getEndTime() +
+//                        "\t\tReal time: " + Utils.parseDate(entry.getRealTime()) +
+//                        "\t\tDuration: " + entry.getDuration());
+//            }
         }
         else{
             //this is just reading historic data - start/end time :)
             //and saving to the sqlite database
-
+            Log.e(TAG, "Time: " + Utils.parseDate(startTime + value1) + "\tDuration: " + (value2 - value1));
             //verify if we already have saved data in the database
-
-//            Log.e(TAG, "Transmitted data: " + value1 + " - " + value2);
-//
-//            Log.e(TAG, ""+ lastStartTime);
-//            Log.e(TAG, "Time: " + startTime);
-
             if(value1 > lastStartTime){
                 db.addHistoricDataEntry(new HistoricDataEntry(value1, value2, (startTime + value1), (value2 - value1)));
             }
