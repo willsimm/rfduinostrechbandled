@@ -151,7 +151,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 //1st proto if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "D65B3DB4-B47B-4C7F-87D9-5459442595E9")) {
                 //breadboard proto2 if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "4A67CF27-F64C-4D5E-8FE4-97902651D3AB")) {
-                if(peripheral.name == "Snapino" ) {
+                if(peripheral.name == "SnapinoLP" ) {
 
                     stepsView.stringValue = "Connecting to RFDuino"
                     self.connectingPeripheral = peripheral
@@ -337,7 +337,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                     println(str)
                     batteryView.stringValue = "history received"
                 } else {
-                    println("not a valid UTF-8 sequence") 
+                    println("not a valid UTF-8 sequence")
                 }
                 
                 //flagSent=0
