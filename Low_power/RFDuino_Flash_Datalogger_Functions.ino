@@ -29,8 +29,9 @@ Will Simm 2015 will@wasdesign.net
 #define  str(x)   xstr(x)
 #define  xstr(x)  #x
 
+int workingFlashPage = 159; //reserve a flash page to use for ongoing use
 int maxFlashPage = 251;
-int minFlashPage = 150; //148 found using findMinFlashPage()
+int minFlashPage = 160; //156 found using findMinFlashPage()
 int currentFlashPage = maxFlashPage; //strat from the last flash page
 int loopedRoundFlash = false;
 int timeInRAMCount = 0;
@@ -75,7 +76,8 @@ int saveUsage(unsigned long now){
       }
       usage.time[timeInRAMCount] = now;
       timeInRAMCount++;
-      flashLED = true;
+      //write to flash page 251
+      writeFlashPage ( usage, workingFlashPage);
       return 1;
   }
   else {
@@ -95,9 +97,76 @@ int saveUsage(unsigned long now){
    }
    
    timeInRAMCount++;
-   flashLED = true;
    return 2;
   }  
+  
+}
+
+int writeFlashPage(struct data_t toSave, int flashPage) {
+  
+
+  int rc;
+  data_t *p = (data_t*)ADDRESS_OF_PAGE(flashPage);
+  
+  //we need to erase flash page first
+  if (serial){
+    Serial.print("Attempting to erase flash page : ");
+    Serial.print(flashPage);
+  }
+  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
+  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  rc = flashPageErase(PAGE_FROM_ADDRESS(p));
+  if (rc == 0){
+    if (serial){
+      Serial.println("Success");
+    }
+    //return 0;
+  }
+  else if (rc == 1){
+    if (serial){
+      Serial.println("Error - the flash page is reserved");
+    }
+    return 0;
+  }
+  else if (rc == 2){
+    if (serial){
+      Serial.println("Error - the flash page is used by the sketch");    
+    }
+    return 0;
+  }
+  
+    
+  
+  //save it
+  if (serial){
+    Serial.print("Attempting to write data to flash page : ");
+    Serial.print(flashPage);
+  }
+  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
+  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  rc = flashWriteBlock(p, &toSave, sizeof(toSave));
+  if (rc == 0){
+    if (serial){
+      Serial.println("Success");
+    }
+    //return 0;
+  }
+  else if (rc == 1){
+    if (serial){
+      Serial.println("Error - the flash page is reserved");
+    }
+    return 0;
+  }
+  else if (rc == 2){
+    if (serial){
+      Serial.println("Error - the flash page is used by the sketch");    
+    }
+    return 0;
+  }
+    
+     
+  return 1;
+  
   
 }
 
@@ -117,53 +186,10 @@ int saveToFlash(struct data_t toSave){
     currentFlashPage = maxFlashPage;
     loopedRoundFlash = true;
   }
-
-  int rc;
-  data_t *p = (data_t*)ADDRESS_OF_PAGE(currentFlashPage);
-  
-  //we need to erase flash page first
-  if (serial){
-    Serial.print("Attempting to erase flash page : ");
+ 
+  if (writeFlashPage(toSave,currentFlashPage) ){
+   currentFlashPage--;    
   }
-  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
-  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
-  rc = flashPageErase(PAGE_FROM_ADDRESS(p));
-  if (rc == 0)
-    if (serial){
-      Serial.println("Success");
-    }
-  else if (rc == 1)
-    if (serial){
-      Serial.println("Error - the flash page is reserved");
-    }
-  else if (rc == 2)
-    if (serial){
-      Serial.println("Error - the flash page is used by the sketch");    
-    }
-    
-  
-  //save it
-  if (serial){
-    Serial.print("Attempting to write data to flash page : ");
-  }
-  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
-  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
-  rc = flashWriteBlock(p, &toSave, sizeof(toSave));
-  if (rc == 0)
-    if (serial){
-      Serial.println("Success");
-    }
-  else if (rc == 1)
-    if (serial){
-      Serial.println("Error - the flash page is reserved");
-    }
-  else if (rc == 2)
-    if (serial){
-      Serial.println("Error - the flash page is used by the sketch");    
-    }
-    
-  currentFlashPage--;  
-  return 1;
 }
 /*
 //read a single flash page into memory
@@ -175,6 +201,16 @@ int readOutFlashPage(int page){
 
 // read out the flash memory, starting from max down to current page. If we've looped ouroudn the whole flash memeory then read out current down to min first.
 int readOutWholeFlash(){
+  
+  if (serial){
+      Serial.println("read reserved working page");
+    }
+  //read out reserved page first
+  data_t *p = (data_t*)ADDRESS_OF_PAGE(workingFlashPage);
+  //send over BLE
+  sendHistory(workingFlashPage, p->time);
+  
+  
   bool readAnything = false;
   //Serial.println("readout method");
   //unsigned long readOut[255];
@@ -186,10 +222,6 @@ int readOutWholeFlash(){
     for (int page = currentFlashPage; page >= minFlashPage; page--) { 
       
       data_t *p = (data_t*)ADDRESS_OF_PAGE(page);
-      //readOut = p->time;
-      
-      
-      //readOutFlashPage(page, &readOut);
       //send over BLE
       sendHistory(page, p->time);      
     }
@@ -198,10 +230,10 @@ int readOutWholeFlash(){
     Serial.println("not looped");
   }
   //count down to flash pages
-  //Serial.print("max f");
-  //Serial.println(maxFlashPage);
-  //Serial.print("current flash");
-  //Serial.println(currentFlashPage);
+  Serial.print("max f");
+  Serial.println(maxFlashPage);
+  Serial.print("current flash");
+  Serial.println(currentFlashPage);
   //fudge it for testing
   //currentFlashPage = 148;
   //maxFlashPage=149;
@@ -209,7 +241,7 @@ int readOutWholeFlash(){
   for (int page = maxFlashPage; page > currentFlashPage; page--) { 
     //Serial.print("reading page");
     //Serial.println(page);
-    data_t *p = (data_t*)ADDRESS_OF_PAGE(page);
+    data_t *p = (data_t*)ADDRESS_OF_PAGE(page); 
     //readOut = p->time;
    
     //readOutFlashPage(page, &readOut);
@@ -270,8 +302,8 @@ void readOutRAMValues(){
 
 
 
-//send history over BLE. At the moment is just prints to serial
-int sendHistory(int page, unsigned long readOut[256]){
+//send history over BLE. 
+int sendHistory(int page, unsigned long readOut[]){
   
   //can send contents of readOut[] array over BLE here as complete array or individual values below
   if (serial){
@@ -286,7 +318,7 @@ int sendHistory(int page, unsigned long readOut[256]){
   unsigned long start=0;
   String toSend;
 
-  for (int c = 0; c < 256; c++) { 
+  for (int c = 0; c < sizeof(readOut); c++) { 
     //Serial.println(c);
     if (ss){
       start = readOut[c];
@@ -299,12 +331,12 @@ int sendHistory(int page, unsigned long readOut[256]){
        sendMessage(toSend);
        
        
-       /*
+       
        Serial.print(" start: ");
        Serial.print(start);
        Serial.print(" stop: ");
        Serial.println(readOut[c]);
-       */
+       
        ss=!ss;
     }     
    }

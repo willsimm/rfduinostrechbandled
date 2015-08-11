@@ -19,7 +19,7 @@ bool mode_active = false;
 bool send_history = false;
 bool battery=false;
 
-bool flashLED=false;
+
 
 //int val = 0;
 //int connection_led = 2;
@@ -51,7 +51,7 @@ bool sleeping = false; //keep track of if the thing is sleeping or not.
 bool bandConnected= true; //is there a rubber band connected?
 int bandMax = 1500; //max likely resistance of a band. Anything over this and the band must be disconnected
 
-bool serial=false;
+bool serial=true;
 
 
 float reading;
@@ -120,8 +120,8 @@ void loop() {
     //set the variable sleep delay
     RFduino_ULPDelay( sleepDelay );
          if (serial){
-           Serial.println(" delay "); 
-           Serial.println(sleepDelay);
+           //Serial.println(" delay "); 
+           //Serial.println(sleepDelay);
          }    
     
     // if the LED has been off for a number of cycles, go to inactive delay and record end of usage
@@ -238,17 +238,7 @@ void loop() {
     }// end history check 
     
     //analogWrite(4, 0);
-    
-    //flashLED=false;
-    if (flashLED){
-      if(serial){
-       Serial.println("flash");
-      }
-     analogWrite(4, 254);
-     RFduino_ULPDelay( 500 );
-     analogWrite(4, 0);
-     flashLED=false; 
-    }
+   
     
     
 }
@@ -391,14 +381,26 @@ void sendHistoryBLE(){
 
 //Write out the value to the LED
 void setLEDColour(int LEDC){
-  LEDC=0;
+  //LEDC=0;
   
    if (serial){
-     Serial.print("LED ");
-     Serial.println(LEDC);
+     //Serial.print("LED ");
+     //Serial.println(LEDC);
    }
 
-   analogWrite(4, LEDC); // green
+  // analogWrite(4, LEDC); // green
+  
+  if (LEDC >0){
+   
+   digitalWrite(4,1);
+  }else
+  {
+   digitalWrite(4,0); 
+  }
+  
+  //digitalWrite(4,0);
+    
+   
    
 }
 
