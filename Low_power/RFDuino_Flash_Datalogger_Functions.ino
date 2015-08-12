@@ -202,14 +202,7 @@ int readOutFlashPage(int page){
 // read out the flash memory, starting from max down to current page. If we've looped ouroudn the whole flash memeory then read out current down to min first.
 int readOutWholeFlash(){
   
-  if (serial){
-      Serial.println("read reserved working page");
-    }
-  //read out reserved page first
-  data_t *p = (data_t*)ADDRESS_OF_PAGE(workingFlashPage);
-  //send over BLE
-  sendHistory(workingFlashPage, p->time);
-  
+ 
   
   bool readAnything = false;
   //Serial.println("readout method");
@@ -230,10 +223,10 @@ int readOutWholeFlash(){
     Serial.println("not looped");
   }
   //count down to flash pages
-  Serial.print("max f");
-  Serial.println(maxFlashPage);
-  Serial.print("current flash");
-  Serial.println(currentFlashPage);
+  //Serial.print("max f");
+  //Serial.println(maxFlashPage);
+  //Serial.print("current flash");
+  //Serial.println(currentFlashPage);
   //fudge it for testing
   //currentFlashPage = 148;
   //maxFlashPage=149;
@@ -256,10 +249,22 @@ int readOutWholeFlash(){
  
  if (!readAnything){
    if (serial){
-      Serial.println("nowt in flash to read");
+      Serial.println("nowt in main flash to read");
    }
  } 
   //Serial.println("end readout");
+  
+  
+  if (serial){
+      Serial.println("read reserved working page");
+    }
+  //read out reserved page first
+  data_t *p = (data_t*)ADDRESS_OF_PAGE(workingFlashPage);
+  //send over BLE
+  sendHistory(workingFlashPage, p->time);
+  
+  
+  
   return 1;
 }
 
@@ -318,7 +323,7 @@ int sendHistory(int page, unsigned long readOut[]){
   unsigned long start=0;
   String toSend;
 
-  for (int c = 0; c < sizeof(readOut); c++) { 
+  for (int c = 0; c < 256; c++) { 
     //Serial.println(c);
     if (ss){
       start = readOut[c];
@@ -328,14 +333,16 @@ int sendHistory(int page, unsigned long readOut[]){
        //SEND individual values OVER BLE HERE
        
        toSend = String(start) +  "/" + String(readOut[c]);
-       sendMessage(toSend);
        
-       
-       
-       Serial.print(" start: ");
-       Serial.print(start);
-       Serial.print(" stop: ");
-       Serial.println(readOut[c]);
+       //will have some zeros if its the working page
+       if (start != 0){
+         sendMessage(toSend);
+                
+         //Serial.print(" start: ");
+         //Serial.print(start);
+         //Serial.print(" stop: ");
+         //Serial.println(readOut[c]);
+       }
        
        ss=!ss;
     }     

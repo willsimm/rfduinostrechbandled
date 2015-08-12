@@ -34,10 +34,12 @@ bool battery=false;
 //These vars are used to configure the device 
 bool save = true; //enable saving of usage times to memory / flash
 int cyclesToSleep = 3; //set how many cycles to keep polling at high frequency with no use before sleeping
-int delayWhenActive = 250; //set the delay between readings during active use
+int delayWhenActive = 150; //set the delay between readings during active use
 int delayWhenInActive = 1000;  //set the delay between readings when use is below threshold 
-int delayWhenBandDisconnected = 10000; //set the delay between readings when the band is disconnected
+int delayWhenBandDisconnected = 2000; //set the delay between readings when the band is disconnected
 int sleepDelay = delayWhenActive; //initially set the delay to as being active
+
+int ledFlashDuration = 20; //20ms led flash when starting use
 
 //set some initial values before we can take some readings
 float minVal =500;
@@ -47,11 +49,11 @@ float maxVal =510;
 bool firstRun = true; //first loop
 bool sendMessages = true; //are we sendign messages
 int zeroCount = 0; //count how may cycles the band has been inactive for
-bool sleeping = false; //keep track of if the thing is sleeping or not.
+bool sleeping = true; //keep track of if the thing is sleeping or not.
 bool bandConnected= true; //is there a rubber band connected?
 int bandMax = 1500; //max likely resistance of a band. Anything over this and the band must be disconnected
 
-bool serial=true;
+bool serial=false;
 
 
 float reading;
@@ -68,8 +70,8 @@ void setup() {
   //pinMode(data_was_requesed_led, OUTPUT);
   
   
-  RFduinoBLE.txPowerLevel = -20; //Sets the transmit power to min  -20dBm
-  RFduinoBLE.advertisementInterval = 250; 
+  //RFduinoBLE.txPowerLevel = -20; //Sets the transmit power to min  -20dBm
+  //RFduinoBLE.advertisementInterval = 250; 
   
   RFduinoBLE.begin();
   
@@ -89,7 +91,7 @@ void setup() {
   
   if(save){
     //start of usage
-    saveUsage( millis() );
+    //saveUsage( millis() );
   }
   
   
@@ -128,10 +130,13 @@ void loop() {
     if (zeroCount > cyclesToSleep){
      
        sleepDelay = delayWhenInActive;
-      if( !sleeping){     
+      if( !sleeping ){     
          //end of usage - knock the time back by the timeout period
-         saveUsage( millis() - (delayWhenActive*cyclesToSleep) );
+         flashLED(); 
+         saveUsage( millis() - (delayWhenActive*cyclesToSleep) - ledFlashDuration);
          sleeping = true;
+         //Serial.println("here");
+         
       }
     }
     
@@ -217,8 +222,20 @@ void loop() {
           
           if (sleeping){
             sleeping=false;
+             
+             flashLED(); 
+
+
+             
              if(save){
-              saveUsage( millis() );
+              
+               
+               saveUsage( millis()-ledFlashDuration );
+              
+              
+              
+              
+              
              }
           }  
       
@@ -243,7 +260,14 @@ void loop() {
     
 }
 
-
+void flashLED(){
+    if (serial){
+    Serial.println("flashing led");
+  }
+                digitalWrite(4,1);
+                 RFduino_ULPDelay( ledFlashDuration );
+               digitalWrite(4,0);  
+}
 
 void RFduinoBLE_onAdvertisement(bool start){}
 
@@ -358,7 +382,7 @@ void sendHistoryBLE(){
    //now read out the contents of all the flash pages we've written
    readOutWholeFlash();
    //and whats left in the RAM buffer
-   readOutRAMValues();
+   //readOutRAMValues(); //no need anymore!
   
   /*
    for (int c = 0; c < 100000; c++){
@@ -390,15 +414,17 @@ void setLEDColour(int LEDC){
 
   // analogWrite(4, LEDC); // green
   
-  if (LEDC >0){
+  
+  //why does analog write not go back to zero?!!!???!!! Digital code here:
+ /* if (LEDC >0){
    
    digitalWrite(4,1);
   }else
   {
    digitalWrite(4,0); 
-  }
+  }*/
   
-  //digitalWrite(4,0);
+ 
     
    
    
