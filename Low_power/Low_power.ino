@@ -64,7 +64,7 @@ void setup() {
   if (serial){
     Serial.begin(9600);
   }
-  RFduinoBLE.deviceName = "SnapinoHA";
+  RFduinoBLE.deviceName = "SnapinoLP";
 
   //pinMode(connection_led, OUTPUT);
   //pinMode(data_was_requesed_led, OUTPUT);
