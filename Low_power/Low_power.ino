@@ -64,14 +64,14 @@ void setup() {
   if (serial){
     Serial.begin(9600);
   }
-  RFduinoBLE.deviceName = "SnapinoLP";
+  RFduinoBLE.deviceName = "SnapinoHA";
 
   //pinMode(connection_led, OUTPUT);
   //pinMode(data_was_requesed_led, OUTPUT);
   
   
-  //RFduinoBLE.txPowerLevel = -20; //Sets the transmit power to min  -20dBm
-  //RFduinoBLE.advertisementInterval = 250; 
+  RFduinoBLE.txPowerLevel = -20; //Sets the transmit power to min  -20dBm
+  RFduinoBLE.advertisementInterval = 250; 
   
   RFduinoBLE.begin();
   
