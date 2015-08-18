@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>snapino table</title>
+  <title>snapinoView v0.01</title>
 
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 	<style>
@@ -14,12 +14,19 @@
 	table, td, th {
 	    border: 1px solid black;
 	}
+	td{
+		width:10%;
+		text-align:center;
+
+	}
+	
 	</style>
 
 
 
 
 <script type="text/javascript">
+//alternate the colour of table rows
 function altRows(id){
 	if(document.getElementsByTagName){  
 		
@@ -68,6 +75,21 @@ table.altrowstable td {
 .evenrowcolor{
 	background-color:#c3dde0;
 }
+
+.times {
+	 background-color:white;
+
+}
+
+.days {
+
+	background-color:white;
+}
+.bleft{
+	background-color:white;
+
+}
+
 </style>
 
 
@@ -78,16 +100,14 @@ table.altrowstable td {
 
 
 
+  <img src="http://myclasp.org/wp-content/themes/np_base_bst/images/CLASP_LOGO.png" />
 
 
-	<table style="width:100%" class="altrowstable" id="alternatecolor">
+  <table style="width:100%" class="altrowstable" id="alternatecolor">
 
-<?php
+  <?php
 
-
-//TAKE LAST 3 DIGITS OFF CSV TIMESTAMPS
-
-$starttimestamp = 1438214400 ; //timestamp ;ast thursday
+$starttimestamp = 1439424000;//1438214400 ; //timestamp last thursday
 $timetrack = $starttimestamp ;
 
 
@@ -95,6 +115,7 @@ $days = array(1=> "Thursday",2=>"Friday",3=>"Saturday",4=>"Sunday",5 => "Monday"
 
 echo $days[0];
 
+//build our table
 
 for ($row=0;$row<=24;$row++){
 	echo ("<tr>");
@@ -102,38 +123,38 @@ for ($row=0;$row<=24;$row++){
 		
 
 		if ($col==0 && $row !=24){
-			echo "<td id=''>";
+			//times column
+			echo "<td class='times' id=''>";
 			echo $row;
 		} elseif  ($col==0 && $row ==24){
-			echo "<td id=''>";
+			//bottom left
+			echo "<td class='bleft'>";
 		}elseif ($row == 24 && $col !=0	){
-			echo "<td id=''>";
+			//days row
+			echo "<td class='days' id=''>";
 			echo $days[$col];
 		}else{
-
+			//times middle bit
 			echo "<td id='".$timetrack."'>";
 			//echo $timetrack;
+			//add a day on
 			$timetrack = $timetrack + 86400;
-
-			
 		}
 		echo "</td>";
 
 	}
 	echo "</tr>";
-
+	//add the correct number of hours onto the starttime for the new row
 	$timetrack = $starttimestamp + (($row+1) * 3600);
 }
-?>
+  ?>
 
-</table>
+  </table>
 
-
-
-
+  <p align="right">snapinoView v0.01</p>
 
 
-<script>
+  <script>
 $(document).ready(function() {
     $.ajax({
         type: "GET",
@@ -195,7 +216,7 @@ function processData(allText) {
 
 	    var averageLengthInteraction =  totalLengthInteraction[key] / value;
 
-	    var html = "".concat(value).concat( " av ").concat(averageLengthInteraction);
+	    var html = "".concat(value).concat( ' usages, average ').concat(parseFloat(averageLengthInteraction/1000).toFixed(1)).concat("s");
 
 	    $("#".concat(cellref)).text(html);
 	    $("#".concat(cellref)).css('background-color','white');
@@ -211,7 +232,7 @@ function processData(allText) {
 }
 
 
-</script>
+  </script>
  
 </body>
 </html>
