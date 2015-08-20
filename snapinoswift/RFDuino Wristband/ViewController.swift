@@ -15,6 +15,9 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     var connectingPeripheral: CBPeripheral!
     var batteryCharacteristic: CBCharacteristic!
     
+    var historyStart:Bool=false;
+    var historyTime:Int=0;
+    
     var  flagSent: UInt8=0
     
     @IBOutlet weak var stepsView: NSTextField!
@@ -151,7 +154,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 //1st proto if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "D65B3DB4-B47B-4C7F-87D9-5459442595E9")) {
                 //breadboard proto2 if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "4A67CF27-F64C-4D5E-8FE4-97902651D3AB")) {
-                if(peripheral.name == "SnapinoLP2" ) {
+                if(peripheral.name == "SnapinoLP4" ) {
 
                     stepsView.stringValue = "Connecting to RFDuino"
                     self.connectingPeripheral = peripheral
@@ -336,6 +339,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if let str : NSString = NSString(data: characteristic.value(), encoding: NSUTF8StringEncoding) {
                     println(str)
                     batteryView.stringValue = "history received"
+                    logHistory(str as String);
                 } else {
                     println("not a valid UTF-8 sequence")
                 }
@@ -374,6 +378,96 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         
     }
+    
+    //break out the history
+    func logHistory(historyStr: String){
+        let historyArray = split(historyStr){$0 == "/"}
+        
+        //historyArray[0] // start
+        //historyArray[1] // stop
+        
+        
+        // toInt returns optional that's why we used a:Int?
+        let start:Int? = historyArray[0].toInt() // firstText is UITextField
+        let stop:Int? = historyArray[1].toInt() // secondText is UITextField
+        
+        // check a and b before unwrapping using !
+        if ((start != nil)&&(stop != nil)&&(stop > start)) {
+            
+            if ((start == -1) && (!historyStart)){
+                historyStart = true;
+                println ("start of history")
+                //ERASE CSV
+                let date = NSDate().timeIntervalSince1970
+                let currentTime:Int = Int(date)
+                historyTime =  (currentTime * 1000) - stop!
+                print("current time")
+                println(currentTime)
+                print("historyTime")
+                println(historyTime)
+            }
+            
+            else if((start == -2) && (historyStart)){
+                historyStart = false;
+                println ("end of history")
+            }
+            
+            else {
+                //do something
+                let length:Int = stop! - start!
+                let startTime:Int = historyTime + start!
+                //write to csv
+                appendToCSV(startTime, length: length);
+
+            }
+            
+            
+        } else {
+            println("Input values are not numeric")
+        }
+        
+    }
+    
+    func appendToCSV(startTime: Int, length: Int){
+        
+        print(startTime)
+        print (",")
+        println(length)
+        
+        
+        
+        let dir:NSURL = NSFileManager.defaultManager().URLsForDirectory(NSSearchPathDirectory.CachesDirectory, inDomains: NSSearchPathDomainMask.UserDomainMask).last as! NSURL
+        let fileurl =  dir.URLByAppendingPathComponent("log.txt")
+        println(fileurl)
+        
+        
+        let string = String(startTime) + "," + String(length) + "\n"
+        let data = string.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)!
+        
+        if NSFileManager.defaultManager().fileExistsAtPath(fileurl.path!) {
+            var err:NSError?
+            if let fileHandle = NSFileHandle(forWritingToURL: fileurl, error: &err) {
+                fileHandle.seekToEndOfFile()
+                fileHandle.writeData(data)
+
+                
+                
+                fileHandle.closeFile()
+            }
+            else {
+                println("Can't open fileHandle \(err)")
+            }
+        }
+        else {
+            var err:NSError?
+            if !data.writeToURL(fileurl, options: .DataWritingAtomic, error: &err) {
+                println("Can't write \(err)")
+            }
+        }
+        
+        
+    }
+    
     
     func output(description: String, data: AnyObject){
         println("\(description): \(data)")
