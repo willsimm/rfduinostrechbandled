@@ -30,6 +30,8 @@ bool radioState = false;
 bool communicating=false;
 int lastUsedBLE = millis();
 char patternBLE[5] = "WXYZ";
+bool send_history = false;
+bool battery=false;
 
 
 bool checkPattern(char button){
@@ -78,7 +80,7 @@ int buttonACallback(uint32_t ulPin)
 
   //save the usage
   if(save){
-    //saveUsage( millis() );
+    saveUsage( millis() );
   }
 
   //check if the pattern is matched
@@ -103,7 +105,7 @@ int buttonBCallback(uint32_t ulPin)
   
   //save the usage
   if(save){
-    //saveUsage( millis() );
+    saveUsage( millis() );
   }
   //log the pattern
   checkPattern('B');
@@ -112,6 +114,137 @@ int buttonBCallback(uint32_t ulPin)
 
 void RFduinoBLE_onAdvertisement(bool start){}
 
+void RFduinoBLE_onConnect(){
+  Serial.println("BLE connected");
+}
+
+void RFduinoBLE_onDisconnect(){
+  Serial.println("BLE disconnected");
+}
+
+void RFduinoBLE_onReceive(char *data, int len){
+  Serial.println("BLE message recieved");
+  Serial.print("flag recieved, value:");
+  Serial.println(String(data[0]));
+  readFlag(data[0]);
+}
+
+void readFlag(int flag){
+
+  switch(flag){
+    case 0:
+      //set Snapino's mode to PASSIVE
+      Serial.println(" legacy mode passive");
+      sendMessage("Mode passive");
+      break;
+    case 1:
+      //set Snapino's mode to ACTIVE
+        Serial.println(" legacy mode active");
+      break;
+    case 2:      
+      //then send historic values as pairs
+      if(!send_history){
+        Serial.println("  history");
+        RFduino_ULPDelay(1000); //take a second break so we don't confuse the phone between mode
+        send_history = true;
+      }
+      break;
+    case 3:
+      if (!battery){
+        battery = true;
+      }
+      break;
+    default:
+      //why are we sending unaccounted flags?!?
+      Serial.print("Doh...do something else! unaccounted flag");
+    break;
+  }
+}
+
+void sendMessage(String message){
+  int len = message.length() + 1;
+  char dataToSend[len];
+  message.toCharArray(dataToSend, len);
+  while(!RFduinoBLE.send(dataToSend, len-1)){
+    RFduino_ULPDelay(100);
+    //val++;
+  }
+}
+
+
+void sendHistoryBLE(){
+  Serial.println("History requested!");
+  //first send current timestamp
+   String toSend = String(-1) + "/" + String(millis());
+   sendMessage(toSend);
+   
+   //now read out the contents of all the flash pages we've written
+   readOutWholeFlash();
+   //and whats left in the RAM buffer
+   readOutRAMValues();
+  
+  /*
+   for (int c = 0; c < 100000; c++){
+     toSend = String(random(10000,50000)) +  "/" + String(random(10000,50000));
+     sendMessage(toSend);
+   }*/
+   
+   
+   //finish with current timestamp
+   toSend = String(-2) + "/" + String(millis());
+   sendMessage(toSend);
+   send_history = false;
+   //Serial.println(val);
+   Serial.println("History sent!");
+}
+
+
+//http://www.arduino-hacks.com/float-to-string-float-to-character-array-arduino/
+//function to extract decimal part of float used by battery level
+long getDecimal(float val)
+{
+ int intPart = int(val);
+ long decPart = 1000*(val-intPart); //I am multiplying by 1000 assuming that the foat values will have a maximum of 3 decimal places
+                                   //Change to match the number of decimal places you need
+ if(decPart>0)return(decPart);           //return the decimal part of float number if it is available 
+ else if(decPart<0)return((-1)*decPart); //if negative, multiply by -1
+ else if(decPart=0)return(00);           //return 0 if decimal part of float number is not available
+}
+
+//send battery level
+void sendBattery(){
+  analogReference(VBG); // Sets the Reference to 1.2V band gap           
+  analogSelection(VDD_1_3_PS);  //Selects VDD with 1/3 prescaling as the analog source
+  int sensorValue = analogRead(1); // the pin has no meaning, it uses VDD pin
+  float batteryVoltage = sensorValue * (3.6 / 1023.0); // convert value to voltage
+  Serial.print("Battery Voltage: ");
+  Serial.println(batteryVoltage); 
+  
+  String stringVal = String(int(batteryVoltage))+ "."+String(getDecimal(batteryVoltage)); 
+  sendMessage(stringVal);
+}
+
+
+void serviceFlags(){
+
+  if (battery){
+    lastUsedBLE = millis();
+    sendBattery();
+    lastUsedBLE = millis();
+    battery=false;
+  }
+  
+  
+  if(send_history){
+    //log time
+    lastUsedBLE = millis();
+    sendHistoryBLE();
+    //log time
+    lastUsedBLE = millis();
+  }
+
+  
+}
 
 void setup() {
   if (Serial) { 
@@ -139,7 +272,7 @@ void loop() {
   if (radioState && (millis()-lastUsedBLE > radioInactiveTimeOut)){
     Serial.println(" stop advertising ");
     stopAdvertising();
-    //usually the device wil be in this delay
+    //most of the time the device will be in this delay
     RFduino_ULPDelay(INFINITE);
     RFduino_resetPinWake(5);
   }
@@ -148,6 +281,7 @@ void loop() {
   else if (radioState){
     //ELSE WE CAN SERVICE THE RADIO FLAGS
     Serial.println(" servicing radio flags ");
+    serviceFlags();
     RFduino_resetPinWake(5);
     RFduino_ULPDelay(SECONDS(0.5));
   }
@@ -156,7 +290,7 @@ void loop() {
   {
     Serial.println(" else loop bit only used on first turn on ");
     RFduino_ULPDelay(INFINITE);
-    RFduino_resetPinWake(5);
+    RFduino_resetPinWake(5); // when the loop is broken by the correct pattern, need to cancle the wake
   }
     
 }
