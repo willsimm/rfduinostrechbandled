@@ -91,11 +91,11 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         default:
             return
         }*/
-        print("writing to ")
-        println(batteryCharacteristic.UUID.UUIDString)
-        println(batteryCharacteristic)
-        var bytes:[UInt8] = [flag];
-        var toSend:NSData = NSData(bytes: bytes, length: bytes.count);
+        print("writing to ", terminator: "")
+        print(batteryCharacteristic.UUID.UUIDString)
+        print(batteryCharacteristic)
+        let bytes:[UInt8] = [flag];
+        let toSend:NSData = NSData(bytes: bytes, length: bytes.count);
         
         
         connectingPeripheral.writeValue(toSend, forCharacteristic: batteryCharacteristic, type: CBCharacteristicWriteType.WithoutResponse)
@@ -117,23 +117,23 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         stepsView.stringValue = "Searching"
         batteryView.stringValue = ""
         spinnerView.hidden = false
-        println("discovery")
+        print("discovery")
         centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
     // CBCentralManagerDelegate - This is called with the CBPeripheral class as its main input parameter. This contains most of the information there is to know about a BLE peripheral.
     
     //WAS edits here
-    func centralManager(central: CBCentralManager!,
-        didDiscoverPeripheral peripheral: CBPeripheral!,
-        advertisementData: [NSObject : AnyObject]!,
-        RSSI: NSNumber!){
+    func centralManager(central: CBCentralManager,
+        didDiscoverPeripheral peripheral: CBPeripheral,
+        advertisementData: [String : AnyObject],
+        RSSI: NSNumber){
             
             
             // func centralManager(central: CBCentralManager!, didDiscoverPeripheral peripheral: CBPeripheral!, advertisementData: (NSDictionary), RSSI: NSNumber!) {
             
             if (peripheral.name != nil) {
-                println("Discovered: " + peripheral.name)
-                println("ID: " + peripheral.identifier.UUIDString)
+                print("Discovered: " + peripheral.name!)
+                print("ID: " + peripheral.identifier.UUIDString)
                 
                 
                 
@@ -154,14 +154,18 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 //1st proto if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "D65B3DB4-B47B-4C7F-87D9-5459442595E9")) {
                 //breadboard proto2 if(peripheral.name == "RFduino" && (peripheral.identifier.UUIDString == "4A67CF27-F64C-4D5E-8FE4-97902651D3AB")) {
-                if(peripheral.name == "SnapinoLP4" ) {
+                if(peripheral.name == "SnapClicker" ) {
 
                     stepsView.stringValue = "Connecting to RFDuino"
+                    print("connecting" )
                     self.connectingPeripheral = peripheral
+                    print("connecting b" )
                     centralManager.stopScan()
+                    print("connecting c" )
                     self.centralManager.connectPeripheral(peripheral, options: nil)
+                    print("connecting d" )
                 } else {
-                    println("skipped " + peripheral.name )
+                    print("skipped " + peripheral.name! )
                 }
                 
                 
@@ -171,12 +175,12 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     // method called whenever the device state changes.
     
-    func centralManagerDidUpdateState(central: CBCentralManager!) { //BLE status
+    func centralManagerDidUpdateState(central: CBCentralManager) { //BLE status
         var msg = ""
         switch (central.state) {
         case .PoweredOff:
             msg = "CoreBluetooth BLE hardware is powered off"
-            println("\(msg)")
+            print("\(msg)")
             stepsView.stringValue = "Please turn on Bluetooth and retry"
             
         case .PoweredOn:
@@ -204,18 +208,18 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     // method called whenever you have successfully connected to the BLE peripheral
     
-    func centralManager(central: CBCentralManager!,didConnectPeripheral peripheral: CBPeripheral!)
+    func centralManager(central: CBCentralManager,didConnectPeripheral peripheral: CBPeripheral)
     {
         peripheral.delegate = self
         peripheral.discoverServices(nil)
         
     }
     // CBPeripheralDelegate - Invoked when you discover the peripheral's available services.
-    
-    func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!)
+   /*
+    func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?)
     {
-        println("peripherial services")
-        if let servicePeripherals = peripheral.services as? [CBService]
+        print("peripherial services")
+        if let servicePeripherals = peripheral.services! as [CBService]
         {
             for servicePeripheral in servicePeripherals
             {
@@ -224,7 +228,45 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             
         }
+    }*/
+    let BLEServiceUUID = CBUUID(string: "025A7775-49AA-42BD-BBDB-E2AE77782966")
+
+//    let PositionCharUUID = CBUUID(string: "F38A2C23-BC54-40FC-BED0-60EDDA139F47")
+    let PositionCharUUID = CBUUID(string: "8BDF9A60-1680-4143-A804-0CD537C9F627")
+
+    
+    func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!) {
+        print("erg")
+        let uuidsForBTService: [CBUUID] = [PositionCharUUID]
+        
+
+        
+        if (error != nil) {
+            return
+        }
+        
+        if ((peripheral.services == nil) || (peripheral.services!.count == 0)) {
+            print("no services")
+            // No Services
+            return
+        }
+        
+        for service in peripheral.services! {
+            print("serivice" + service.description)
+            
+            peripheral.discoverCharacteristics(nil, forService: service as CBService)
+            
+           // if service.UUID == BLEServiceUUID {
+            //    print("match")
+                //peripheral.discoverCharacteristics(uuidsForBTService, forService: service as CBService)
+            //    peripheral.discoverCharacteristics(uuidsForBTService, forService: peripheral.services! as [CBService])
+                
+            //}
+        }
     }
+    
+    
+    
     
     func refreshBLE() {
         centralManager.scanForPeripheralsWithServices(nil, options: nil)
@@ -232,11 +274,49 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // Invoked when you discover the characteristics of a specified service.
     
-    func peripheral(peripheral: CBPeripheral!, didDiscoverCharacteristicsForService service: CBService!, error: NSError!) {
-        println("hello")
+    func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+        print("hello")
         stepsView.stringValue = ("connected to strech sensor")
         
-        if let charactericsArr = service.characteristics  as? [CBCharacteristic]
+       print( service.characteristics?.description)
+        
+        for c in (service.characteristics as [CBCharacteristic]!) {
+            print("hello a")
+        }
+
+        
+    //    for (CBCharacteristic, *characteristic in service.characteristics) {
+      //      NSLog("Discovered characteristic %@", characteristic);
+            
+        //}
+        
+
+        
+        
+        
+        
+        
+        for characteristic in service.characteristics! {
+            print("hello 2")
+            
+            
+            //subscribe to all notifications
+            peripheral.setNotifyValue(true, forCharacteristic: characteristic as CBCharacteristic)
+            
+            
+            if characteristic.UUID.UUIDString == "2222"{
+                
+                batteryCharacteristic = characteristic;
+                
+            }
+            
+        }
+        
+        
+        /*
+        
+        
+        if let charactericsArr = service.characteristics!  as [CBCharacteristic]
         {
             for cc in charactericsArr
             {
@@ -277,20 +357,20 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
             }
             
-        }
+        }*/
     }
     // Invoked when you retrieve a specified characteristic's value, or when the peripheral device notifies your app that the characteristic's value has changed.
-    func peripheral(peripheral: CBPeripheral!, didUpdateValueForCharacteristic characteristic: CBCharacteristic!, error: NSError!) {
+    func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
         
         //output("Data for "+characteristic.UUID.UUIDString, data: characteristic.value())
         
         if(characteristic.UUID.UUIDString == "FF06") {
             spinnerView.hidden = true
-            var u16 = UnsafePointer<Int>(characteristic.value().bytes).memory
+            var u16 = UnsafePointer<Int>(characteristic.value!.bytes).memory
             stepsView.stringValue = ("\(u16) steps")
         } else if(characteristic.UUID.UUIDString == "FF0C") {
             spinnerView.hidden = true
-            var u16 = UnsafePointer<Int32>(characteristic.value().bytes).memory
+            var u16 = UnsafePointer<Int32>(characteristic.value!.bytes).memory
             u16 =  u16 & 0xff
             batteryView.stringValue = ("\(u16) Resistance")
         }
@@ -304,8 +384,8 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             
             
-            let theString:NSString = NSString(data: characteristic.value(), encoding: NSASCIIStringEncoding)!
-            println(theString)
+            let theString:NSString = NSString(data: characteristic.value!, encoding: NSASCIIStringEncoding)!
+            print(theString)
             
             
             
@@ -319,13 +399,13 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             if (flagSent == 3)
             {
-                print("battery voltage: ")
+                print("battery voltage: ", terminator: "")
                 
-                if let str : NSString = NSString(data: characteristic.value(), encoding: NSUTF8StringEncoding) {
-                    println(str)
+                if let str : NSString = NSString(data: characteristic.value!, encoding: NSUTF8StringEncoding) {
+                    print(str)
                     batteryView.stringValue = str as String
                 } else {
-                    println("not a valid UTF-8 sequence")
+                    print("not a valid UTF-8 sequence")
                 }
                 
                 flagSent=0
@@ -334,14 +414,14 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
             if(flagSent == 2){
                 
-                print(" history: ")
+                print(" history: ", terminator: "")
                 
-                if let str : NSString = NSString(data: characteristic.value(), encoding: NSUTF8StringEncoding) {
-                    println(str)
+                if let str : NSString = NSString(data: characteristic.value!, encoding: NSUTF8StringEncoding) {
+                    print(str)
                     batteryView.stringValue = "history received"
                     logHistory(str as String);
                 } else {
-                    println("not a valid UTF-8 sequence")
+                    print("not a valid UTF-8 sequence")
                 }
                 
                 //flagSent=0
@@ -353,7 +433,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             if (false) {
             
-            var u16 = UnsafePointer<Int32>(characteristic.value().bytes).memory
+            var u16 = UnsafePointer<Int32>(characteristic.value!.bytes).memory
             //u16 =  u16 & 0xff
             resistanceView.stringValue = ("\(u16) Resistance")
             
@@ -362,11 +442,14 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             if let dirs : [String] = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.AllDomainsMask, true) as? [String] {
                 let dir = dirs[0] //documents directory
-                let path = dir.stringByAppendingPathComponent(file);
+                let path = (dir as NSString).stringByAppendingPathComponent(file);
                 let text = "\(u16)";
                 
-                //writing
-                text.writeToFile(path, atomically: false, encoding: NSUTF8StringEncoding, error: nil);
+                do {
+                    //writing
+                    try text.writeToFile(path, atomically: false, encoding: NSUTF8StringEncoding)
+                } catch _ {
+                };
                 
                 //reading
                 //let text2 = String(contentsOfFile: path, encoding: NSUTF8StringEncoding, error: nil)
@@ -381,35 +464,35 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     //break out the history
     func logHistory(historyStr: String){
-        let historyArray = split(historyStr){$0 == "/"}
+        let historyArray = historyStr.characters.split{$0 == "/"}.map { String($0) }
         
         //historyArray[0] // start
         //historyArray[1] // stop
         
         
         // toInt returns optional that's why we used a:Int?
-        let start:Int? = historyArray[0].toInt() // firstText is UITextField
-        let stop:Int? = historyArray[1].toInt() // secondText is UITextField
+        let start:Int? = Int(historyArray[0]) // firstText is UITextField
+        let stop:Int? = Int(historyArray[1]) // secondText is UITextField
         
         // check a and b before unwrapping using !
         if ((start != nil)&&(stop != nil)&&(stop > start)) {
             
             if ((start == -1) && (!historyStart)){
                 historyStart = true;
-                println ("start of history")
+                print ("start of history")
                 //ERASE CSV
                 let date = NSDate().timeIntervalSince1970
                 let currentTime:Int = Int(date)
                 historyTime =  (currentTime * 1000) - stop!
-                print("current time")
-                println(currentTime)
-                print("historyTime")
-                println(historyTime)
+                print("current time", terminator: "")
+                print(currentTime)
+                print("historyTime", terminator: "")
+                print(historyTime)
             }
             
             else if((start == -2) && (historyStart)){
                 historyStart = false;
-                println ("end of history")
+                print ("end of history")
             }
             
             else {
@@ -423,22 +506,22 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             
         } else {
-            println("Input values are not numeric")
+            print("Input values are not numeric")
         }
         
     }
     
     func appendToCSV(startTime: Int, length: Int){
         
-        print(startTime)
-        print (",")
-        println(length)
+        print(startTime, terminator: "")
+        print (",", terminator: "")
+        print(length)
         
         
         
-        let dir:NSURL = NSFileManager.defaultManager().URLsForDirectory(NSSearchPathDirectory.CachesDirectory, inDomains: NSSearchPathDomainMask.UserDomainMask).last as! NSURL
+        let dir:NSURL = NSFileManager.defaultManager().URLsForDirectory(NSSearchPathDirectory.CachesDirectory, inDomains: NSSearchPathDomainMask.UserDomainMask).last! as NSURL
         let fileurl =  dir.URLByAppendingPathComponent("log.txt")
-        println(fileurl)
+        print(fileurl)
         
         
         let string = String(startTime) + "," + String(length) + "\n"
@@ -446,22 +529,26 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         if NSFileManager.defaultManager().fileExistsAtPath(fileurl.path!) {
             var err:NSError?
-            if let fileHandle = NSFileHandle(forWritingToURL: fileurl, error: &err) {
+            do {
+                let fileHandle = try NSFileHandle(forWritingToURL: fileurl)
                 fileHandle.seekToEndOfFile()
                 fileHandle.writeData(data)
 
                 
                 
                 fileHandle.closeFile()
-            }
-            else {
-                println("Can't open fileHandle \(err)")
+            } catch let error as NSError {
+                err = error
+                print("Can't open fileHandle \(err)")
             }
         }
         else {
             var err:NSError?
-            if !data.writeToURL(fileurl, options: .DataWritingAtomic, error: &err) {
-                println("Can't write \(err)")
+            do {
+                try data.writeToURL(fileurl, options: .DataWritingAtomic)
+            } catch let error as NSError {
+                err = error
+                print("Can't write \(err)")
             }
         }
         
@@ -470,7 +557,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     
     func output(description: String, data: AnyObject){
-        println("\(description): \(data)")
+        print("\(description): \(data)")
         // textField.text = textField.text + "\(description): \(data)\n"
     }
     
@@ -482,4 +569,3 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
 }
-
