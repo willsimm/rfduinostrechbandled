@@ -30,7 +30,7 @@ Will Simm 2015 will@wasdesign.net
 #define  xstr(x)  #x
 
 int maxFlashPage = 251;
-int minFlashPage = 150; //148 found using findMinFlashPage()
+int minFlashPage = 154; //148 found using findMinFlashPage()
 int currentFlashPage = maxFlashPage; //strat from the last flash page
 int loopedRoundFlash = false;
 int timeInRAMCount = 0;
@@ -52,13 +52,15 @@ int findMinFlashPage(int maxFlashPage) {
   int rc;
   for (int page = maxFlashPage; page > 120; page--) { 
     data_t *p = (data_t*)ADDRESS_OF_PAGE(page);
-    
-    while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
-    delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
-    
+
+    if (radioState){
+      while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
+      delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+    }
     rc = flashPageErase(PAGE_FROM_ADDRESS(p));
     if (rc == 0) {
       minPage = page;
+      //Serial.print(page);
     }
   }
   return minPage;
@@ -112,8 +114,10 @@ int saveToFlash(struct data_t toSave){
   
   //we need to erase flash page first
   Serial.print("Attempting to erase flash page : ");
-  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
-  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  if (radioState) {
+    while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
+    delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  }
   rc = flashPageErase(PAGE_FROM_ADDRESS(p));
   if (rc == 0)
     Serial.println("Success");
@@ -125,8 +129,10 @@ int saveToFlash(struct data_t toSave){
   
   //save it
   Serial.print("Attempting to write data to flash page : ");
-  while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
-  delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  if (radioState) {
+    while(!RFduinoBLE.radioActive){} //wait until the radio is active, wastes time, but ensures we will get the most usage of non active cpu time
+    delay(6); // roughly the amount of time, from when the radio notification triggers to when we are inactive
+  }
   rc = flashWriteBlock(p, &toSave, sizeof(toSave));
   if (rc == 0)
     Serial.println("Success");

@@ -463,6 +463,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     //break out the history
+    //this orignially dealt with pairs of values for the stretch band, now just treats them individually
     func logHistory(historyStr: String){
         let historyArray = historyStr.characters.split{$0 == "/"}.map { String($0) }
         
@@ -497,10 +498,13 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             else {
                 //do something
-                let length:Int = stop! - start!
+                let length:Int = 0
                 let startTime:Int = historyTime + start!
                 //write to csv
-                appendToCSV(startTime, length: length);
+                appendToCSV(startTime,length: length );
+                
+                let secondTime:Int = historyTime + stop!
+                appendToCSV(secondTime,length: length);
 
             }
             

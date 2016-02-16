@@ -74,24 +74,48 @@ void stopAdvertising(){
 //callback for button A press
 int buttonACallback(uint32_t ulPin)
 {
-  digitalWrite(4, HIGH);  //blue
-  delay(lightFlash);
-  digitalWrite(4, LOW);
+  //digitalWrite(4, HIGH);  //blue
+  //delay(lightFlash);
+  //digitalWrite(4, LOW);
+
+
+  bool buttonA=true;
+  while (buttonA){
+    if( digitalRead(5) ==HIGH ){
+      //Serial.print("button on");
+      digitalWrite(4, HIGH);  //blue
+      
+    }
+    else {      
+      Serial.print("button off");
+      digitalWrite(4, LOW);
+      buttonA=false;
+
+    }
+    //Serial.print("INFINITE DELAY");
+    //delay(2000)  ;
+  }
+
+
 
   //save the usage
   if(save){
     saveUsage( millis() );
   }
 
+  Serial.print("check pattern");
   //check if the pattern is matched
   if (checkPattern('A')){
+    Serial.print("pattern matched");
     //if the radio is not alreay on then turn it on
     if (!radioState){      
+      Serial.print("start adv");
       startAdvertising();
       //return 1 so we break the infinite loop
       return 1;
     }
   }
+  
   //drop back to the infinite loop
   return 0; 
 }
@@ -225,7 +249,7 @@ void sendBattery(){
 }
 
 
-void serviceFlags(){
+void serviceFlags(){ 
 
   if (battery){
     lastUsedBLE = millis();
@@ -247,7 +271,7 @@ void serviceFlags(){
 }
 
 void setup() {
-  if (Serial) { 
+  if (serial) { 
     Serial.begin(9600);
   }
   RFduinoBLE.deviceName = nameDevice;
@@ -263,6 +287,9 @@ void setup() {
   pinMode(6, INPUT);  //  buttonB
   RFduino_pinWakeCallback(6, HIGH, buttonBCallback);
 
+  //Serial.print("min flash page");
+  //Serial.print(findMinFlashPage(251));
+
   
 }
 
@@ -273,14 +300,18 @@ void loop() {
     Serial.println(" stop advertising ");
     stopAdvertising();
     //most of the time the device will be in this delay
+
+    RFduino_resetPinWake(5); ///THIS
+    Serial.println(" radio off sleep ");
     RFduino_ULPDelay(INFINITE);
+    Serial.println(" delay, really? Should never see this radio off ");
     RFduino_resetPinWake(5);
   }
 
   // else service the radio
   else if (radioState){
     //ELSE WE CAN SERVICE THE RADIO FLAGS
-    Serial.println(" servicing radio flags ");
+    //Serial.println(" servicing radio flags ");
     serviceFlags();
     RFduino_resetPinWake(5);
     RFduino_ULPDelay(SECONDS(0.5));
@@ -288,10 +319,14 @@ void loop() {
   //this is only used the first time the device is on
   else
   {
+    RFduino_resetPinWake(5); // when the loop is broken by the correct pattern, need to cancle the wake
     Serial.println(" else loop bit only used on first turn on ");
     RFduino_ULPDelay(INFINITE);
+    Serial.println(" delay, really? Should never see this else loop");
     RFduino_resetPinWake(5); // when the loop is broken by the correct pattern, need to cancle the wake
   }
-    
+  //Serial.print("main loop");
+    //    RFduino_ULPDelay(INFINITE);
+    //Serial.println(" delay, really? Should never see this  main loop");
 }
 
