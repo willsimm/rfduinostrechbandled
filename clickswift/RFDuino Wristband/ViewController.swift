@@ -497,6 +497,9 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             
             else {
+                /*
+                this from wrtiting each value and zeroing rather than start stop times and length
+                
                 //do something
                 let length:Int = 0
                 let startTime:Int = historyTime + start!
@@ -504,7 +507,18 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                 appendToCSV(startTime,length: length );
                 
                 let secondTime:Int = historyTime + stop!
-                appendToCSV(secondTime,length: length);
+                appendToCSV(secondTime,length: length);*/
+                
+                let length:Int = stop! - start!
+                let startTime:Int = historyTime + start!
+                //write to csv
+                appendToCSV(startTime,length: length );
+                
+                
+                
+                
+                
+                
 
             }
             
