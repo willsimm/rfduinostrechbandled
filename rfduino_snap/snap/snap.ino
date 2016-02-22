@@ -24,6 +24,7 @@ int radioInactiveTimeOut = 10000; // 60 secodns timeout
 char patternBLEToMatch[5] = "BBAA"; // button press pattern that needs to be matched before BLE turned on 
                                     // Should end with "A"
 int lightFlash = 25; // number ms the light flashes when clicked
+int ledBrightness = 200; // brightness of leds 0 to 255
 
 //state
 bool radioState = false;
@@ -83,7 +84,7 @@ int buttonACallback(uint32_t ulPin)
   while (buttonA){
     if( digitalRead(5) ==HIGH ){
       //Serial.print("button on");
-      digitalWrite(4, HIGH);  //blue
+      analogWrite(4, ledBrightness);  //blue
       
     }
     else {      
@@ -123,7 +124,8 @@ int buttonACallback(uint32_t ulPin)
 // callback for button b poress
 int buttonBCallback(uint32_t ulPin)
 {
-  digitalWrite(3, HIGH);  //green
+  //digitalWrite(3, HIGH);  //green
+  analogWrite(3, ledBrightness); 
   delay(lightFlash);
   digitalWrite(3, LOW);
   
@@ -294,6 +296,8 @@ void setup() {
 }
 
 void loop() {
+  //Serial.println(" sleepy ");
+//RFduino_ULPDelay(SECONDS(0.5));
 
   //if radios on and timed out then turn the radio off
   if (radioState && (millis()-lastUsedBLE > radioInactiveTimeOut)){
@@ -314,6 +318,7 @@ void loop() {
     //Serial.println(" servicing radio flags ");
     serviceFlags();
     RFduino_resetPinWake(5);
+    Serial.println(" sleepy service radio ");
     RFduino_ULPDelay(SECONDS(0.5));
   }
   //this is only used the first time the device is on
